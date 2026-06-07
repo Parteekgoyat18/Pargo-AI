@@ -3,7 +3,7 @@ import { searchHotels, getHotelDetails, searchDestinations, checkRate, createBoo
 
 const client = new Anthropic();
 
-const SYSTEM_PROMPT = `You are HotelGPT, an AI hotel booking assistant.
+const SYSTEM_PROMPT = `You are Pargo AI, an AI hotel booking assistant.
 You help users find and book hotels worldwide. Only answer questions related to hotels, accommodations, travel destinations, and bookings.
 
 When a user asks about hotels, use the available tools to:

@@ -80,7 +80,7 @@ function GPTAvatar() {
       background: '#000', color: '#fff',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: 13, fontWeight: 700, flexShrink: 0,
-    }}>H</div>
+    }}>P</div>
   );
 }
 
@@ -169,8 +169,8 @@ export default function ChatUI({ user }) {
   const taRef       = useRef(null);
   const activeIdRef = useRef(null);
 
-  const listKey = `hotelgpt_convs_${user.id}`;
-  const msgKey  = useCallback(id => `hotelgpt_msgs_${user.id}_${id}`, [user.id]);
+  const listKey = `pargoai_convs_${user.id}`;
+  const msgKey  = useCallback(id => `pargoai_msgs_${user.id}_${id}`, [user.id]);
 
   /* ── Responsive: detect screen size ── */
   useEffect(() => {
@@ -345,8 +345,8 @@ export default function ChatUI({ user }) {
               background: '#000', color: '#fff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 11, fontWeight: 700,
-            }}>H</div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#0d0d0d' }}>HotelGPT</span>
+            }}>P</div>
+            <span style={{ fontSize: 14, fontWeight: 600, color: '#0d0d0d' }}>Pargo AI</span>
 
             {/* Close sidebar button */}
             <button
@@ -484,7 +484,7 @@ export default function ChatUI({ user }) {
                   width: 52, height: 52, borderRadius: '50%', background: '#000',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   margin: '0 auto 20px', fontSize: 22, fontWeight: 700, color: '#fff',
-                }}>H</div>
+                }}>P</div>
                 <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
                   What can I help with?
                 </h1>
@@ -527,7 +527,7 @@ export default function ChatUI({ user }) {
               ref={taRef}
               rows={1}
               value={input}
-              placeholder="Message HotelGPT"
+              placeholder="Message Pargo AI"
               onChange={e => { setInput(e.target.value); resize(); }}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
               style={{
@@ -540,7 +540,7 @@ export default function ChatUI({ user }) {
             <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
           </div>
           <p style={{ textAlign: 'center', color: '#b4b4b4', fontSize: 12, marginTop: 10 }}>
-            HotelGPT can make mistakes. Check important info.
+            Pargo AI can make mistakes. Check important info.
           </p>
         </div>
 

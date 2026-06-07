@@ -4,8 +4,8 @@ import bcrypt from 'bcryptjs'
 // Run with: node --env-file=.env.local scripts/seed-users.mjs
 
 const USERS = [
-  { name: 'Admin',      email: 'admin@hotelgpt.com',  password: 'admin123!' },
-  { name: 'Demo Staff', email: 'staff@hotelgpt.com',  password: 'staff456!' },
+  { name: 'Admin',      email: 'admin@pargoai.com',  password: 'admin123!' },
+  { name: 'Demo Staff', email: 'staff@pargoai.com',  password: 'staff456!' },
 ]
 
 async function seed() {

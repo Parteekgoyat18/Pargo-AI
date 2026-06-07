@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "HotelGPT — AI Booking Assistant",
+  title: "Pargo AI — AI Booking Assistant",
   description: "Your personal AI concierge for hotel bookings worldwide",
 };
 

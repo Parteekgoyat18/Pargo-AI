@@ -29,12 +29,12 @@ export default function LoginPage() {
             background: '#fff', color: '#000',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, fontWeight: 700,
-          }}>H</div>
+          }}>P</div>
           <h1 style={{
             color: '#fff', fontSize: 20, fontWeight: 600,
             margin: '12px 0 4px', letterSpacing: '-0.2px',
           }}>
-            Sign in to HotelGPT
+            Sign in to Pargo AI
           </h1>
           <p style={{ color: '#666', fontSize: 13, margin: 0 }}>
             Enter your credentials to continue
