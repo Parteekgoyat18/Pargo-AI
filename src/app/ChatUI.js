@@ -33,7 +33,7 @@ function groupByDate(list) {
 }
 
 /* ── Conversation list item ──────────────────────────── */
-function ConvItem({ conv, active, onOpen, onDelete }) {
+function ConvItem({ conv, active, onOpen, onDelete, isMobile }) {
   const [hov, setHov] = useState(false);
   return (
     <div
@@ -53,7 +53,7 @@ function ConvItem({ conv, active, onOpen, onDelete }) {
       }}>
         {conv.title}
       </span>
-      {(hov || active) && (
+      {(hov || active || isMobile) && (
         <button
           onClick={onDelete}
           title="Delete"
@@ -107,9 +107,9 @@ function SendButton({ onClick, disabled }) {
 }
 
 /* ── Typing dots ─────────────────────────────────────── */
-function Thinking() {
+function Thinking({ isMobile }) {
   return (
-    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: '12px 24px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${isMobile ? 12 : 24}px`, display: 'flex', gap: isMobile ? 10 : 16, alignItems: 'flex-start' }}>
       <GPTAvatar />
       <div style={{ paddingTop: 3, display: 'flex', gap: 4 }}>
         <span className="dot" /><span className="dot" /><span className="dot" />
@@ -119,13 +119,15 @@ function Thinking() {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content }) {
+function Message({ role, content, isMobile }) {
+  const px = isMobile ? 12 : 24;
+  const gap = isMobile ? 10 : 16;
   if (role === 'user') {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: '6px 24px', display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
           background: '#f4f4f4', color: '#0d0d0d', borderRadius: 18,
-          padding: '10px 16px', maxWidth: '75%', fontSize: 15,
+          padding: '10px 16px', maxWidth: '85%', fontSize: 15,
           lineHeight: 1.65, whiteSpace: 'pre-wrap',
         }}>
           {content}
@@ -134,9 +136,9 @@ function Message({ role, content }) {
     );
   }
   return (
-    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: '12px 24px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
       <GPTAvatar />
-      <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#0d0d0d', paddingTop: 3, flex: 1 }}>
+      <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#0d0d0d', paddingTop: 3, flex: 1, minWidth: 0 }}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
@@ -161,13 +163,26 @@ export default function ChatUI({ user }) {
   const [input,       setInput]       = useState('');
   const [busy,        setBusy]        = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile,    setIsMobile]    = useState(false);
 
   const bottomRef   = useRef(null);
   const taRef       = useRef(null);
-  const activeIdRef = useRef(null); // always in sync with activeId
+  const activeIdRef = useRef(null);
 
   const listKey = `hotelgpt_convs_${user.id}`;
   const msgKey  = useCallback(id => `hotelgpt_msgs_${user.id}_${id}`, [user.id]);
+
+  /* ── Responsive: detect screen size ── */
+  useEffect(() => {
+    const check = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      setSidebarOpen(!mobile);
+    };
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   /* ── Load conversation list on mount ── */
   useEffect(() => {
@@ -208,6 +223,7 @@ export default function ChatUI({ user }) {
       const raw = localStorage.getItem(msgKey(id));
       setMessages(raw ? JSON.parse(raw) : []);
     } catch { setMessages([]); }
+    if (isMobile) setSidebarOpen(false);
   }
 
   function newChat() {
@@ -217,6 +233,7 @@ export default function ChatUI({ user }) {
     setMessages([]);
     setInput('');
     if (taRef.current) taRef.current.style.height = 'auto';
+    if (isMobile) setSidebarOpen(false);
   }
 
   function deleteConv(id, e) {
@@ -284,19 +301,42 @@ export default function ChatUI({ user }) {
   const empty  = messages.length === 0;
   const groups = groupByDate(convs);
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', background: '#fff' }}>
-
-      {/* ════════════════════════════════ SIDEBAR ═══ */}
-      <div style={{
-        width: sidebarOpen ? 260 : 0,
-        flexShrink: 0,
+  /* ── Sidebar: overlay on mobile, push on desktop ── */
+  const sidebarStyle = isMobile
+    ? {
+        position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 1000,
+        width: 260, background: '#f9f9f9', borderRight: '1px solid #e5e5e5',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.22s ease',
+        boxShadow: sidebarOpen ? '4px 0 20px rgba(0,0,0,0.15)' : 'none',
+      }
+    : {
+        width: sidebarOpen ? 260 : 0, flexShrink: 0,
         background: '#f9f9f9',
         borderRight: sidebarOpen ? '1px solid #e5e5e5' : 'none',
         display: 'flex', flexDirection: 'column',
         overflow: 'hidden',
         transition: 'width 0.22s ease',
-      }}>
+      };
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', background: '#fff' }}>
+
+      {/* Mobile backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            zIndex: 999,
+          }}
+        />
+      )}
+
+      {/* ════════════════════════════════ SIDEBAR ═══ */}
+      <div style={sidebarStyle}>
         {/* Logo + New Chat */}
         <div style={{ padding: '14px 10px 8px', flexShrink: 0, minWidth: 260 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -308,7 +348,7 @@ export default function ChatUI({ user }) {
             }}>H</div>
             <span style={{ fontSize: 14, fontWeight: 600, color: '#0d0d0d' }}>HotelGPT</span>
 
-            {/* Close sidebar button — top right of sidebar */}
+            {/* Close sidebar button */}
             <button
               onClick={() => setSidebarOpen(false)}
               title="Close sidebar"
@@ -372,6 +412,7 @@ export default function ChatUI({ user }) {
                     active={c.id === activeId}
                     onOpen={() => openConv(c.id)}
                     onDelete={e => deleteConv(c.id, e)}
+                    isMobile={isMobile}
                   />
                 ))}
               </div>
@@ -434,7 +475,8 @@ export default function ChatUI({ user }) {
         <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto' }}>
           {empty ? (
             <div style={{
-              maxWidth: 700, margin: '0 auto', padding: '50px 24px 0',
+              maxWidth: 700, margin: '0 auto',
+              padding: `${isMobile ? 32 : 50}px 16px 0`,
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
             }}>
               <div style={{ textAlign: 'center' }}>
@@ -443,11 +485,15 @@ export default function ChatUI({ user }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   margin: '0 auto 20px', fontSize: 22, fontWeight: 700, color: '#fff',
                 }}>H</div>
-                <h1 style={{ fontSize: 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
+                <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
                   What can I help with?
                 </h1>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, width: '100%' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                gap: 10, width: '100%',
+              }}>
                 {SUGGESTIONS.map(s => (
                   <button
                     key={s.label}
@@ -462,15 +508,15 @@ export default function ChatUI({ user }) {
             </div>
           ) : (
             <div style={{ paddingTop: 24, paddingBottom: 16 }}>
-              {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} />)}
-              {busy && <Thinking />}
+              {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} isMobile={isMobile} />)}
+              {busy && <Thinking isMobile={isMobile} />}
               <div ref={bottomRef} />
             </div>
           )}
         </div>
 
         {/* Input */}
-        <div style={{ flexShrink: 0, padding: '10px 16px 24px', background: '#fff' }}>
+        <div style={{ flexShrink: 0, padding: `10px 12px ${isMobile ? 16 : 24}px`, background: '#fff' }}>
           <div style={{
             maxWidth: 768, margin: '0 auto', background: '#fff',
             borderRadius: 24, padding: '10px 10px 10px 18px',

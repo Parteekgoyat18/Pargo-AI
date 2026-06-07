@@ -13,6 +13,7 @@ export default function LoginPage() {
       justifyContent: 'center',
       background: '#0d0d0d',
       fontFamily: 'inherit',
+      padding: '24px 16px',
     }}>
       <div style={{
         width: '100%',
