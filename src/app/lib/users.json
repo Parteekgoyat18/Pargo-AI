@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1",
+    "name": "Admin",
+    "email": "admin@hotelgpt.com",
+    "hash": "$2b$12$gboQFGtGnDYyILqKaBXDZeExlqq1/et5rGxKV1A4RkxeromOxZBAC"
+  },
+  {
+    "id": "2",
+    "name": "Demo Staff",
+    "email": "staff@hotelgpt.com",
+    "hash": "$2b$12$pvUmhyW8xKfzmdckM4T6GuR4QTiEQAHsxWvvtAIES3rbzO2PnM152"
+  }
+]
