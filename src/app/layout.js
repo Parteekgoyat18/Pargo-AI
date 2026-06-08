@@ -7,8 +7,11 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className="h-full overflow-hidden" suppressHydrationWarning>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+      </head>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

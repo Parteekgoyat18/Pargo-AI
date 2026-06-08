@@ -2,15 +2,29 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background: #ffffff;
   color: #0d0d0d;
-  margin: 0;
+}
+
+.app-shell {
+  /* --vh is set by JS to window.innerHeight * 0.01, so this always equals the real visible height */
+  height: calc(var(--vh, 1vh) * 100);
+  overflow: hidden;
 }
 
 .chat-scroll {
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #d9d9d9 transparent;
 }

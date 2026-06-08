@@ -172,16 +172,17 @@ export default function ChatUI({ user }) {
   const listKey = `pargoai_convs_${user.id}`;
   const msgKey  = useCallback(id => `pargoai_msgs_${user.id}_${id}`, [user.id]);
 
-  /* ── Responsive: detect screen size ── */
+  /* ── Responsive: detect screen size + fix mobile 100vh ── */
   useEffect(() => {
-    const check = () => {
+    const update = () => {
+      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       setSidebarOpen(!mobile);
     };
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, []);
 
   /* ── Load conversation list on mount ── */
@@ -321,7 +322,7 @@ export default function ChatUI({ user }) {
       };
 
   return (
-    <div style={{ display: 'flex', height: '100vh', background: '#fff' }}>
+    <div className="app-shell" style={{ display: 'flex', background: '#fff' }}>
 
       {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
@@ -516,7 +517,7 @@ export default function ChatUI({ user }) {
         </div>
 
         {/* Input */}
-        <div style={{ flexShrink: 0, padding: `10px 12px ${isMobile ? 16 : 24}px`, background: '#fff' }}>
+        <div style={{ flexShrink: 0, padding: `10px 12px ${isMobile ? 16 : 24}px`, paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : 24, background: '#fff' }}>
           <div style={{
             maxWidth: 768, margin: '0 auto', background: '#fff',
             borderRadius: 24, padding: '10px 10px 10px 18px',
