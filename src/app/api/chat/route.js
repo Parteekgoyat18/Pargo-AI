@@ -149,14 +149,9 @@ export async function POST(request) {
             messages: apiMessages,
           });
 
-          // Stream any text blocks
-          for (const block of response.content) {
-            if (block.type === 'text') {
-              controller.enqueue(encoder.encode(block.text));
-            }
-          }
-
           if (response.stop_reason === 'tool_use') {
+            // Don't stream text that appears mid-loop alongside tool calls —
+            // it's Claude "thinking aloud" and would confuse the user.
             // Execute all tool calls in parallel
             const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
             const toolResults = await Promise.all(
@@ -170,6 +165,12 @@ export async function POST(request) {
             apiMessages.push({ role: 'assistant', content: response.content });
             apiMessages.push({ role: 'user', content: toolResults });
           } else {
+            // Final response — only now stream text to the user
+            for (const block of response.content) {
+              if (block.type === 'text') {
+                controller.enqueue(encoder.encode(block.text));
+              }
+            }
             continueLoop = false;
           }
         }

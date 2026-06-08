@@ -178,12 +178,16 @@ export async function checkRate(rateKey) {
   const room = data.hotel?.rooms?.[0];
   if (!room) return { error: 'Rate not found' };
 
-  const rate = room.rates?.[0];
+  const rateData = room.rates?.[0];
+  const apiCurrency = data.hotel.currency || 'EUR';
+  const fxRate = apiCurrency === 'EUR' ? await getEurToInrRate() : 1;
+  const displayCurrency = apiCurrency === 'EUR' ? 'INR' : apiCurrency;
+
   return {
     hotelName: data.hotel.name,
-    net: rate?.net,
-    currency: data.hotel.currency,
-    cancellationPolicies: rate?.cancellationPolicies,
+    net: fxRate !== 1 ? Math.round(parseFloat(rateData?.net) * fxRate) : rateData?.net,
+    currency: displayCurrency,
+    cancellationPolicies: rateData?.cancellationPolicies,
   };
 }
 
@@ -212,14 +216,18 @@ export async function createBooking({ rateKey, holderName, holderSurname, email,
   }
 
   const booking = data.booking;
+  const apiCurrency = booking?.currency || 'EUR';
+  const fxRate = apiCurrency === 'EUR' ? await getEurToInrRate() : 1;
+  const displayCurrency = apiCurrency === 'EUR' ? 'INR' : apiCurrency;
+
   return {
     bookingReference: booking?.reference,
     status: booking?.status,
     hotelName: booking?.hotel?.name,
     checkIn: booking?.hotel?.checkIn,
     checkOut: booking?.hotel?.checkOut,
-    totalNet: booking?.totalNet,
-    currency: booking?.currency,
+    totalNet: fxRate !== 1 ? Math.round(parseFloat(booking?.totalNet) * fxRate) : booking?.totalNet,
+    currency: displayCurrency,
     holderName: `${booking?.holder?.name} ${booking?.holder?.surname}`,
     cancellationPolicies: booking?.hotel?.rooms?.[0]?.rates?.[0]?.cancellationPolicies,
   };
