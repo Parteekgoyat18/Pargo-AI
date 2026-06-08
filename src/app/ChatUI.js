@@ -172,17 +172,16 @@ export default function ChatUI({ user }) {
   const listKey = `pargoai_convs_${user.id}`;
   const msgKey  = useCallback(id => `pargoai_msgs_${user.id}_${id}`, [user.id]);
 
-  /* ── Responsive: detect screen size + fix mobile 100vh ── */
+  /* ── Responsive: detect screen size ── */
   useEffect(() => {
-    const update = () => {
-      document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+    const check = () => {
       const mobile = window.innerWidth < 768;
       setIsMobile(mobile);
       setSidebarOpen(!mobile);
     };
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
   /* ── Load conversation list on mount ── */
@@ -305,7 +304,7 @@ export default function ChatUI({ user }) {
   /* ── Sidebar: overlay on mobile, push on desktop ── */
   const sidebarStyle = isMobile
     ? {
-        position: 'fixed', top: 0, left: 0, height: '100%', zIndex: 1000,
+        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1000,
         width: 260, background: '#f9f9f9', borderRight: '1px solid #e5e5e5',
         display: 'flex', flexDirection: 'column', overflow: 'hidden',
         transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
@@ -322,7 +321,7 @@ export default function ChatUI({ user }) {
       };
 
   return (
-    <div className="app-shell" style={{ display: 'flex', background: '#fff' }}>
+    <div className="app-shell">
 
       {/* Mobile backdrop */}
       {isMobile && sidebarOpen && (
@@ -447,7 +446,7 @@ export default function ChatUI({ user }) {
       </div>
 
       {/* ══════════════════════════ MAIN AREA ═══════ */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
         {/* Open sidebar button — shown only when sidebar is closed */}
         {!sidebarOpen && (
@@ -473,7 +472,7 @@ export default function ChatUI({ user }) {
         )}
 
         {/* Chat messages */}
-        <div className="chat-scroll" style={{ flex: 1, overflowY: 'auto' }}>
+        <div className="chat-scroll">
           {empty ? (
             <div style={{
               maxWidth: 700, margin: '0 auto',

@@ -6,7 +6,6 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow: hidden;
 }
 
 body {
@@ -15,16 +14,20 @@ body {
   color: #0d0d0d;
 }
 
+/* position:fixed + inset:0 always equals the real visible screen — no JS height hacks needed */
 .app-shell {
-  /* --vh is set by JS to window.innerHeight * 0.01, so this always equals the real visible height */
-  height: calc(var(--vh, 1vh) * 100);
-  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  display: flex;
+  background: #fff;
 }
 
 .chat-scroll {
+  flex: 1;
+  min-height: 0;          /* lets flex item shrink so overflow-y works */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
   scrollbar-width: thin;
   scrollbar-color: #d9d9d9 transparent;
 }
