@@ -119,7 +119,7 @@ function Thinking({ isMobile }) {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
@@ -132,6 +132,17 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone }) 
         }}>
           {content}
         </div>
+      </div>
+    );
+  }
+  const sfMatch = content.trim().match(SEARCH_FORM_RE);
+  if (sfMatch) {
+    let prefill = {};
+    try { if (sfMatch[1]) prefill = JSON.parse(sfMatch[1]); } catch {}
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <SearchForm prefill={prefill} onSubmit={onSearchFormSubmit} done={searchFormDone} />
       </div>
     );
   }
@@ -150,6 +161,127 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone }) 
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
+  );
+}
+
+/* ── Search Form ─────────────────────────────────────── */
+const SEARCH_FORM_RE = /^\[SEARCH_FORM(?::(\{[\s\S]*\}))?\]$/;
+
+function SearchForm({ prefill = {}, onSubmit, done }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [destination, setDestination] = useState(prefill.destination || '');
+  const [checkin,     setCheckin]     = useState(prefill.checkin  || '');
+  const [checkout,    setCheckout]    = useState(prefill.checkout || '');
+  const [adults,      setAdults]      = useState(prefill.adults   || 2);
+
+  const valid = destination.trim() && checkin && checkout && checkin < checkout;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    onSubmit(destination.trim(), checkin, checkout, adults);
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Search submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  };
+  const labelStyle = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        background: '#fff', border: '1px solid #e5e5e5',
+        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+      }}
+    >
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Where do you want to stay?
+      </p>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Destination</span>
+        <input
+          type="text" value={destination} required
+          onChange={e => setDestination(e.target.value)}
+          placeholder="e.g. Goa, Paris, Bali"
+          style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'}
+          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+        />
+      </label>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Check-in</span>
+          <input
+            type="date" value={checkin} required min={today}
+            onChange={e => setCheckin(e.target.value)}
+            style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Check-out</span>
+          <input
+            type="date" value={checkout} required min={checkin || today}
+            onChange={e => setCheckout(e.target.value)}
+            style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+      </div>
+
+      <label style={{ ...labelStyle, marginBottom: 18 }}>
+        <span style={labelTextStyle}>Adults</span>
+        <select
+          value={adults}
+          onChange={e => setAdults(Number(e.target.value))}
+          style={fieldStyle}
+        >
+          {[1, 2, 3, 4, 5, 6].map(n => (
+            <option key={n} value={n}>{n} adult{n > 1 ? 's' : ''}</option>
+          ))}
+        </select>
+      </label>
+
+      <button
+        type="submit"
+        disabled={!valid}
+        style={{
+          width: '100%', padding: '11px',
+          borderRadius: 10, border: 'none',
+          background: valid ? '#000' : '#d9d9d9',
+          color: '#fff', fontSize: 14, fontWeight: 600,
+          cursor: valid ? 'pointer' : 'not-allowed',
+          transition: 'background 0.15s',
+        }}
+      >
+        Search Hotels
+      </button>
+    </form>
   );
 }
 
@@ -439,6 +571,16 @@ export default function ChatUI({ user }) {
     send(msg);
   }
 
+  /* ── Search form: done when a user message exists after the last search form marker ── */
+  const lastSearchFormIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && SEARCH_FORM_RE.test(m.content.trim()) ? i : acc, -1);
+  const searchFormDone = lastSearchFormIdx !== -1 && messages.slice(lastSearchFormIdx + 1).some(m => m.role === 'user');
+
+  function handleSearchFormSubmit(destination, checkin, checkout, adults) {
+    const msg = `Destination: ${destination}\nCheck-in: ${checkin}\nCheck-out: ${checkout}\nAdults: ${adults}`;
+    send(msg);
+  }
+
   const empty  = messages.length === 0;
   const groups = groupByDate(convs);
 
@@ -657,6 +799,8 @@ export default function ChatUI({ user }) {
                   isMobile={isMobile}
                   onGuestFormSubmit={handleGuestFormSubmit}
                   guestFormDone={guestFormDone}
+                  onSearchFormSubmit={handleSearchFormSubmit}
+                  searchFormDone={searchFormDone}
                 />
               ))}
               {busy && <Thinking isMobile={isMobile} />}
