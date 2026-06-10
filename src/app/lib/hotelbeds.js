@@ -52,18 +52,38 @@ export async function searchHotels(destinationCode, checkIn, checkOut, adults = 
   const data = await res.json();
   if (!data.hotels?.hotels) return { hotels: [], message: 'No hotels found' };
 
+  const hotelList = data.hotels.hotels.slice(0, 10);
   const apiCurrency = data.hotels.currency || data.hotels.hotels[0]?.currency || 'EUR';
-  const rate = apiCurrency === 'EUR' ? await getEurToInrRate() : 1;
+  const codes = hotelList.map(h => h.code).join(',');
+
+  // Run exchange-rate lookup and facilities fetch in parallel
+  const [rate, facilitiesMap] = await Promise.all([
+    apiCurrency === 'EUR' ? getEurToInrRate() : Promise.resolve(1),
+    (async () => {
+      const map = {};
+      try {
+        const qs = new URLSearchParams({ codes, fields: 'facilities', language: 'ENG', from: '1', to: String(hotelList.length) });
+        const res = await fetch(`${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`, { headers: getHeaders() });
+        if (res.ok) {
+          (await res.json()).hotels?.forEach(h => {
+            map[String(h.code)] = (h.facilities || []).slice(0, 5).map(f => f.facilityName?.content).filter(Boolean);
+          });
+        }
+      } catch {}
+      return map;
+    })(),
+  ]);
   const displayCurrency = apiCurrency === 'EUR' ? 'INR' : apiCurrency;
 
   return {
-    hotels: data.hotels.hotels.slice(0, 5).map(h => ({
+    hotels: hotelList.map(h => ({
       code: h.code,
       name: h.name,
       categoryName: h.categoryName,
       minRate: rate !== 1 ? Math.round(h.minRate * rate) : h.minRate,
       currency: displayCurrency,
       rateKey: h.rooms?.[0]?.rates?.[0]?.rateKey,
+      facilities: facilitiesMap[String(h.code)] || [],
     })),
   };
 }

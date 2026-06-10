@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { logoutAction } from '@/app/actions/auth';
@@ -41,34 +41,212 @@ function ConvItem({ conv, active, onOpen, onDelete, isMobile }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        padding: '7px 10px', borderRadius: 6, cursor: 'pointer', marginBottom: 1,
-        background: active ? '#e9e9e9' : hov ? '#f0f0f0' : 'transparent',
+        padding: '6px 10px', borderRadius: 8, cursor: 'pointer', marginBottom: 1,
+        background: active ? 'rgba(0,0,0,0.07)' : hov ? 'rgba(0,0,0,0.04)' : 'transparent',
         display: 'flex', alignItems: 'center', gap: 6,
-        transition: 'background 0.1s',
+        position: 'relative',
       }}
     >
       <span style={{
-        fontSize: 13, color: '#111', flex: 1,
+        fontSize: 13.5, color: active ? '#0d0d0d' : '#2d2d2d', flex: 1,
         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        fontWeight: active ? 500 : 400,
       }}>
         {conv.title}
       </span>
-      {(hov || active || isMobile) && (
+      {(hov || isMobile) && (
         <button
           onClick={onDelete}
           title="Delete"
           style={{
             flexShrink: 0, background: 'none', border: 'none',
-            cursor: 'pointer', padding: 2, color: '#999',
-            display: 'flex', alignItems: 'center',
+            cursor: 'pointer', padding: '2px 3px', color: '#888',
+            display: 'flex', alignItems: 'center', borderRadius: 4,
           }}
+          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#333'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = '#888'; }}
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18 6L6 18M6 6l12 12" />
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
           </svg>
         </button>
       )}
     </div>
+  );
+}
+
+/* ── Small icon button (used in mini sidebar) ────────── */
+function IconBtn({ onClick, title, children }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      style={{
+        background: 'none', border: 'none', cursor: 'pointer',
+        width: 36, height: 36, borderRadius: 8,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#555',
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.09)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'none'}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ── Logo button: shows "P" logo, swaps to sidebar icon on hover ── */
+function LogoToggleBtn({ onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      title="Open sidebar"
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: hov ? 'rgba(0,0,0,0.07)' : 'none',
+        border: 'none', cursor: 'pointer',
+        width: 36, height: 36, borderRadius: 8,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: '#555',
+      }}
+    >
+      {hov ? (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M9 3v18" />
+        </svg>
+      ) : (
+        <div style={{
+          width: 26, height: 26, borderRadius: '50%',
+          background: '#000', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700, letterSpacing: '-0.3px',
+        }}>P</div>
+      )}
+    </button>
+  );
+}
+
+/* ── Sidebar content (shared by mobile overlay + desktop) */
+function SidebarContent({ onClose, onNewChat, groups, activeId, openConv, deleteConv, isMobile, user }) {
+  return (
+    <>
+      {/* Top bar */}
+      <div style={{ padding: '10px 10px 6px', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <button
+            onClick={onClose}
+            title="Close sidebar"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              width: 34, height: 34, borderRadius: 8, color: '#555',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <rect x="3" y="3" width="18" height="18" rx="3" />
+              <path d="M9 3v18" />
+            </svg>
+          </button>
+
+          <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', flex: 1, paddingLeft: 4, whiteSpace: 'nowrap' }}>
+            Pargo AI
+          </span>
+
+          <button
+            onClick={onNewChat}
+            title="New chat"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              width: 34, height: 34, borderRadius: 8, color: '#555',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.07)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {/* Conversation list */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
+        {Object.values(groups).every(g => g.length === 0) && (
+          <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', marginTop: 32, lineHeight: 1.5 }}>
+            No conversations yet
+          </p>
+        )}
+        {Object.entries(groups).map(([label, items]) =>
+          items.length > 0 && (
+            <div key={label} style={{ marginBottom: 8 }}>
+              <p style={{
+                fontSize: 11, color: '#999', fontWeight: 600,
+                padding: '10px 10px 4px', margin: 0, letterSpacing: '0.3px',
+              }}>
+                {label}
+              </p>
+              {items.map(c => (
+                <ConvItem
+                  key={c.id}
+                  conv={c}
+                  active={c.id === activeId}
+                  onOpen={() => openConv(c.id)}
+                  onDelete={e => deleteConv(c.id, e)}
+                  isMobile={isMobile}
+                />
+              ))}
+            </div>
+          )
+        )}
+      </div>
+
+      {/* User section */}
+      <div style={{ padding: '8px 10px 12px', flexShrink: 0 }}>
+        <div
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '8px 10px', borderRadius: 10, cursor: 'default',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+        >
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: '#555', color: '#fff', flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700,
+          }}>
+            {(user.name || 'U').slice(0, 2).toUpperCase()}
+          </div>
+          <span style={{
+            fontSize: 13.5, fontWeight: 500, color: '#0d0d0d', flex: 1,
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {user.name}
+          </span>
+          <form action={logoutAction}>
+            <button type="submit" title="Sign out" style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              padding: 4, color: '#888', display: 'flex', alignItems: 'center', borderRadius: 6,
+            }}
+              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#333'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#8a7060'; }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+              </svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -119,10 +297,13 @@ function Thinking({ isMobile }) {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
+    // Strip rateKey from hotel selection messages before displaying
+    const bookingMatch = content.match(/^I'd like to book (.+?) \(rateKey:/);
+    const display = bookingMatch ? `I'd like to book ${bookingMatch[1]}` : content;
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
@@ -130,8 +311,17 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
           padding: '10px 16px', maxWidth: '85%', fontSize: 15,
           lineHeight: 1.65, whiteSpace: 'pre-wrap',
         }}>
-          {content}
+          {display}
         </div>
+      </div>
+    );
+  }
+  const hotelListData = parseHotelListToken(content);
+  if (hotelListData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <HotelList hotels={hotelListData.hotels || []} onSelect={onHotelSelect} done={hotelListDone} />
       </div>
     );
   }
@@ -143,6 +333,24 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <SearchForm prefill={prefill} onSubmit={onSearchFormSubmit} done={searchFormDone} />
+      </div>
+    );
+  }
+  const paymentGateData = parsePaymentGateToken(content);
+  if (paymentGateData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <PaymentGate data={paymentGateData} guestRef={guestRef} onComplete={onPaymentComplete} done={paymentGateDone} />
+      </div>
+    );
+  }
+  const bookingConfirmedData = parseBookingConfirmedToken(content);
+  if (bookingConfirmedData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <BookingConfirmed data={bookingConfirmedData} />
       </div>
     );
   }
@@ -160,6 +368,314 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#0d0d0d', paddingTop: 3, flex: 1, minWidth: 0 }}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
+    </div>
+  );
+}
+
+/* ── Hotel List ──────────────────────────────────────── */
+function parseHotelListToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[HOTEL_LIST:')) return null;
+  try { return JSON.parse(t.slice('[HOTEL_LIST:'.length, -1)); } catch { return null; }
+}
+
+function HotelCard({ hotel, onSelect }) {
+  const fmt = n => Number(n).toLocaleString('en-IN');
+  return (
+    <button
+      onClick={() => onSelect(hotel)}
+      style={{
+        background: '#fff', border: '1px solid #e5e5e5',
+        borderRadius: 12, padding: '14px 16px', marginBottom: 8,
+        cursor: 'pointer', textAlign: 'left', width: '100%',
+        boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = '#999'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)'; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)'; }}
+    >
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: hotel.facilities?.length ? 8 : 0 }}>
+        <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: '#0d0d0d' }}>{hotel.name}</div>
+          {hotel.categoryName && (
+            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{hotel.categoryName}</div>
+          )}
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 14, color: '#0d0d0d' }}>
+            {hotel.currency} {fmt(hotel.minRate)}
+          </div>
+          <div style={{ fontSize: 11, color: '#999' }}>per night</div>
+        </div>
+      </div>
+      {hotel.facilities?.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+          {hotel.facilities.map((f, i) => (
+            <span key={i} style={{
+              fontSize: 11, color: '#555', background: '#f4f4f4',
+              borderRadius: 6, padding: '2px 8px',
+            }}>{f}</span>
+          ))}
+        </div>
+      )}
+    </button>
+  );
+}
+
+function HotelList({ hotels, onSelect, done }) {
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Hotel selected
+      </div>
+    );
+  }
+
+  const sorted = [...hotels].sort((a, b) => a.minRate - b.minRate);
+  const mid = Math.ceil(sorted.length / 2);
+  const affordable = sorted.slice(0, mid);
+  const premium = sorted.slice(mid);
+  const fmt = n => Number(n).toLocaleString('en-IN');
+  const cur = sorted[0]?.currency || '';
+
+  const SectionHeader = ({ label, low, high }) => (
+    <div style={{
+      fontSize: 11, fontWeight: 600, color: '#888',
+      textTransform: 'uppercase', letterSpacing: '0.5px',
+      marginBottom: 8, marginTop: 4,
+    }}>
+      {label}
+      <span style={{ fontWeight: 400, color: '#aaa', marginLeft: 6 }}>
+        {cur} {fmt(low)} – {fmt(high)} / night
+      </span>
+    </div>
+  );
+
+  return (
+    <div style={{ width: '100%', maxWidth: 460 }}>
+      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#0d0d0d' }}>
+        Here are the available hotels. Tap one to select:
+      </p>
+
+      {affordable.length > 0 && (
+        <div>
+          <SectionHeader
+            label="Affordable"
+            low={affordable[0].minRate}
+            high={affordable[affordable.length - 1].minRate}
+          />
+          {affordable.map(h => <HotelCard key={h.code} hotel={h} onSelect={onSelect} />)}
+        </div>
+      )}
+
+      {premium.length > 0 && (
+        <div style={{ marginTop: affordable.length ? 8 : 0 }}>
+          <SectionHeader
+            label="Premium"
+            low={premium[0].minRate}
+            high={premium[premium.length - 1].minRate}
+          />
+          {premium.map(h => <HotelCard key={h.code} hotel={h} onSelect={onSelect} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Payment token helpers ───────────────────────────── */
+function parsePaymentGateToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[PAYMENT_GATE:')) return null;
+  try { return JSON.parse(t.slice('[PAYMENT_GATE:'.length, -1)); } catch { return null; }
+}
+
+function parseBookingConfirmedToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[BOOKING_CONFIRMED:')) return null;
+  try { return JSON.parse(t.slice('[BOOKING_CONFIRMED:'.length, -1)); } catch { return null; }
+}
+
+/* ── PaymentGate (dummy card form) ───────────────────── */
+function PaymentGate({ data, guestRef, onComplete, done }) {
+  const [cardNum, setCardNum] = useState('');
+  const [expiry,  setExpiry]  = useState('');
+  const [cvv,     setCvv]     = useState('');
+  const [paying,  setPaying]  = useState(false);
+  const [error,   setError]   = useState('');
+
+  const cardClean = cardNum.replace(/\s/g, '');
+  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Payment complete
+      </div>
+    );
+  }
+
+  function fmtCard(val) {
+    return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
+  }
+  function fmtExpiry(val) {
+    const d = val.replace(/\D/g, '').slice(0, 4);
+    return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
+  }
+
+  async function handlePay(e) {
+    e.preventDefault();
+    if (!valid || paying) return;
+    setPaying(true);
+    setError('');
+    try {
+      const res = await fetch('/api/payment/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rateKey: data.rateKey, guest: guestRef.current }),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
+      onComplete(await res.json());
+    } catch (err) {
+      setError(err.message || 'Booking failed. Please try again.');
+      setPaying(false);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    letterSpacing: '0.05em', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form
+      onSubmit={handlePay}
+      style={{
+        background: '#fff', border: '1px solid #e5e5e5',
+        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+      }}
+    >
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Payment Details
+      </p>
+      <p style={{ margin: '0 0 14px', fontSize: 13, color: '#666' }}>{data.hotelName}</p>
+
+      <div style={{
+        background: '#f9f9f9', borderRadius: 10, padding: '10px 14px',
+        display: 'flex', justifyContent: 'space-between', marginBottom: 16,
+      }}>
+        <span style={{ fontSize: 13, color: '#666' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#0d0d0d' }}>
+          {data.currency} {Number(data.amount).toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Card Number</span>
+        <input
+          type="text" value={cardNum} placeholder="1234 5678 9012 3456"
+          onChange={e => setCardNum(fmtCard(e.target.value))}
+          style={inputStyle}
+          onFocus={e => e.target.style.borderColor = '#999'}
+          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+        />
+      </label>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Expiry</span>
+          <input
+            type="text" value={expiry} placeholder="MM/YY"
+            onChange={e => setExpiry(fmtExpiry(e.target.value))}
+            style={inputStyle}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>CVV</span>
+          <input
+            type="text" value={cvv} placeholder="123" maxLength={4}
+            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
+            style={{ ...inputStyle, letterSpacing: '0.2em' }}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+      </div>
+
+      {error && (
+        <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={!valid || paying}
+        style={{
+          width: '100%', padding: '11px', marginTop: 4,
+          borderRadius: 10, border: 'none',
+          background: (!valid || paying) ? '#d9d9d9' : '#000',
+          color: '#fff', fontSize: 14, fontWeight: 600,
+          cursor: (!valid || paying) ? 'not-allowed' : 'pointer',
+          transition: 'background 0.15s',
+        }}
+      >
+        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+      </button>
+    </form>
+  );
+}
+
+/* ── BookingConfirmed ────────────────────────────────── */
+function BookingConfirmed({ data }) {
+  const row = (label, value) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e5e5' }}>
+      <span style={{ fontSize: 13, color: '#666' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#0d0d0d', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%', background: '#dcfce7',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#166534' }}>Booking Confirmed!</span>
+      </div>
+
+      {row('Reference',  data.reference  || '—')}
+      {row('Hotel',      data.hotelName  || '—')}
+      {row('Guest',      data.holder     || '—')}
+      {row('Check-in',   data.checkIn    || '—')}
+      {row('Check-out',  data.checkOut   || '—')}
+      {row('Total paid', `${data.currency} ${Number(data.total).toLocaleString('en-IN')}`)}
     </div>
   );
 }
@@ -256,15 +772,13 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
 
       <label style={{ ...labelStyle, marginBottom: 18 }}>
         <span style={labelTextStyle}>Adults</span>
-        <select
-          value={adults}
-          onChange={e => setAdults(Number(e.target.value))}
+        <input
+          type="number" value={adults} min={1} required
+          onChange={e => setAdults(Math.max(1, Number(e.target.value)))}
           style={fieldStyle}
-        >
-          {[1, 2, 3, 4, 5, 6].map(n => (
-            <option key={n} value={n}>{n} adult{n > 1 ? 's' : ''}</option>
-          ))}
-        </select>
+          onFocus={e => e.target.style.borderColor = '#999'}
+          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+        />
       </label>
 
       <button
@@ -408,13 +922,6 @@ function GuestDetailsForm({ onSubmit, done }) {
   );
 }
 
-/* ── Suggestions ─────────────────────────────────────── */
-const SUGGESTIONS = [
-  { label: 'Luxury hotels in Paris', sub: 'for next weekend' },
-  { label: 'Beachfront resorts in Bali', sub: 'under $200/night' },
-  { label: 'Business hotels in New York', sub: 'near Times Square' },
-  { label: 'Romantic stay in Santorini', sub: 'for 2 adults' },
-];
 
 /* ══════════════════════════════════════════════════════ */
 /*  Main ChatUI                                          */
@@ -428,9 +935,13 @@ export default function ChatUI({ user }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile,    setIsMobile]    = useState(false);
 
-  const bottomRef   = useRef(null);
-  const taRef       = useRef(null);
-  const activeIdRef = useRef(null);
+  const bottomRef       = useRef(null);
+  const scrollRef       = useRef(null);
+  const taRef           = useRef(null);
+  const activeIdRef     = useRef(null);
+  const pendingGuestRef = useRef(null);
+  const scrollInstant   = useRef(false);
+  const loadingConv     = useRef(false); // true when opening a past chat — skip timestamp update
 
   const listKey = `pargoai_convs_${user.id}`;
   const msgKey  = useCallback(id => `pargoai_msgs_${user.id}_${id}`, [user.id]);
@@ -462,6 +973,13 @@ export default function ChatUI({ user }) {
 
     try { localStorage.setItem(msgKey(id), JSON.stringify(messages)); } catch {}
 
+    // If we just loaded a past conversation, don't touch the timestamp —
+    // updating it would re-sort the list and make it jump.
+    if (loadingConv.current) {
+      loadingConv.current = false;
+      return;
+    }
+
     const title = getTitle(messages);
     const now   = new Date().toISOString();
     setConvs(prev => {
@@ -475,11 +993,24 @@ export default function ChatUI({ user }) {
     });
   }, [messages, listKey, msgKey]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, busy]);
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (scrollInstant.current) {
+      // Jump straight to the bottom with no animation — must happen
+      // before the browser paints so the user never sees the top.
+      el.scrollTop = el.scrollHeight;
+      scrollInstant.current = false;
+    } else {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, busy]);
 
   /* ── Actions ── */
   function openConv(id) {
     if (id === activeIdRef.current) return;
+    scrollInstant.current = true;
+    loadingConv.current = true;
     activeIdRef.current = id;
     setActiveId(id);
     try {
@@ -567,6 +1098,7 @@ export default function ChatUI({ user }) {
   const guestFormDone = lastFormIdx !== -1 && messages.slice(lastFormIdx + 1).some(m => m.role === 'user');
 
   function handleGuestFormSubmit(firstName, lastName, email, phone) {
+    pendingGuestRef.current = { firstName, lastName, email, phone };
     const msg = `First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}`;
     send(msg);
   }
@@ -581,262 +1113,256 @@ export default function ChatUI({ user }) {
     send(msg);
   }
 
+  /* ── Hotel list: done when a user message exists after the last hotel list ── */
+  const lastHotelListIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[HOTEL_LIST:') ? i : acc, -1);
+  const hotelListDone = lastHotelListIdx !== -1 && messages.slice(lastHotelListIdx + 1).some(m => m.role === 'user');
+
+  function handleHotelSelect(hotel) {
+    send(`I'd like to book ${hotel.name} (rateKey: ${hotel.rateKey})`);
+  }
+
+  /* ── Payment gate: done when a BOOKING_CONFIRMED message exists after it ── */
+  const lastPaymentGateIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[PAYMENT_GATE:') ? i : acc, -1);
+  const paymentGateDone = lastPaymentGateIdx !== -1 &&
+    messages.slice(lastPaymentGateIdx + 1).some(m => m.content.trim().startsWith('[BOOKING_CONFIRMED:'));
+
+  function handlePaymentComplete(booking) {
+    const confirmed = JSON.stringify({
+      reference: booking.bookingReference,
+      hotelName: booking.hotelName,
+      holder:    booking.holderName,
+      checkIn:   booking.checkIn,
+      checkOut:  booking.checkOut,
+      total:     booking.totalNet,
+      currency:  booking.currency,
+    });
+    setMessages(prev => [...prev, { role: 'assistant', content: `[BOOKING_CONFIRMED:${confirmed}]` }]);
+  }
+
   const empty  = messages.length === 0;
   const groups = groupByDate(convs);
 
-  /* ── Sidebar: overlay on mobile, push on desktop ── */
-  const sidebarStyle = isMobile
-    ? {
-        position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1000,
-        width: 260, background: '#f9f9f9', borderRight: '1px solid #e5e5e5',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden',
-        transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
-        transition: 'transform 0.22s ease',
-        boxShadow: sidebarOpen ? '4px 0 20px rgba(0,0,0,0.15)' : 'none',
-      }
-    : {
-        width: sidebarOpen ? 260 : 0, flexShrink: 0,
-        background: '#f9f9f9',
-        borderRight: sidebarOpen ? '1px solid #e5e5e5' : 'none',
-        display: 'flex', flexDirection: 'column',
-        overflow: 'hidden',
-        transition: 'width 0.22s ease',
-      };
+  /* ── Sidebar widths ── */
+  const SIDEBAR_OPEN = 260;
+  const SIDEBAR_MINI = 52; // collapsed icon strip (desktop only)
 
   return (
     <div className="app-shell">
 
-      {/* Mobile backdrop */}
-      {isMobile && sidebarOpen && (
-        <div
-          onClick={() => setSidebarOpen(false)}
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            zIndex: 999,
-          }}
-        />
+      {/* ════════════════════════════════ SIDEBAR ═══ */}
+
+      {/* Mobile: full overlay sidebar */}
+      {isMobile && (
+        <>
+          {sidebarOpen && (
+            <div onClick={() => setSidebarOpen(false)} style={{
+              position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 999,
+            }} />
+          )}
+          <div style={{
+            position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1000,
+            width: SIDEBAR_OPEN, background: '#f9f9f9',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden',
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.22s ease',
+            boxShadow: sidebarOpen ? '4px 0 24px rgba(0,0,0,0.18)' : 'none',
+          }}>
+            <SidebarContent
+              sidebarOpen={true}
+              onClose={() => setSidebarOpen(false)}
+              onNewChat={newChat}
+              groups={groups}
+              activeId={activeId}
+              openConv={openConv}
+              deleteConv={deleteConv}
+              isMobile={isMobile}
+              user={user}
+            />
+          </div>
+        </>
       )}
 
-      {/* ════════════════════════════════ SIDEBAR ═══ */}
-      <div style={sidebarStyle}>
-        {/* Logo + New Chat */}
-        <div style={{ padding: '14px 10px 8px', flexShrink: 0, minWidth: 260 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <div style={{
-              width: 26, height: 26, borderRadius: '50%',
-              background: '#000', color: '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700,
-            }}>P</div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#0d0d0d' }}>Pargo AI</span>
-
-            {/* Close sidebar button */}
-            <button
-              onClick={() => setSidebarOpen(false)}
-              title="Close sidebar"
-              style={{
-                marginLeft: 'auto', background: 'none', border: 'none',
-                cursor: 'pointer', padding: 4, color: '#999', borderRadius: 4,
-                display: 'flex', alignItems: 'center',
-                transition: 'color 0.15s, background 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e5e5e5'; e.currentTarget.style.color = '#333'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'none'; e.currentTarget.style.color = '#999'; }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          </div>
-
-          <button
-            onClick={newChat}
-            style={{
-              width: '100%', padding: '8px 10px',
-              background: '#fff', border: '1px solid #e0e0e0',
-              borderRadius: 8, fontSize: 13, fontWeight: 500,
-              color: '#111', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 7,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#ebebeb'}
-            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />
-            </svg>
-            New chat
-          </button>
-        </div>
-
-        {/* Conversation list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '0 6px' }}>
-          {convs.length === 0 && (
-            <p style={{ fontSize: 12, color: '#bbb', textAlign: 'center', marginTop: 24 }}>
-              No conversations yet
-            </p>
-          )}
-
-          {Object.entries(groups).map(([label, items]) =>
-            items.length > 0 && (
-              <div key={label} style={{ marginBottom: 4 }}>
-                <p style={{
-                  fontSize: 11, color: '#aaa', fontWeight: 600,
-                  padding: '8px 10px 4px', margin: 0,
-                  textTransform: 'uppercase', letterSpacing: '0.4px',
-                }}>
-                  {label}
-                </p>
-                {items.map(c => (
-                  <ConvItem
-                    key={c.id}
-                    conv={c}
-                    active={c.id === activeId}
-                    onOpen={() => openConv(c.id)}
-                    onDelete={e => deleteConv(c.id, e)}
-                    isMobile={isMobile}
-                  />
-                ))}
-              </div>
-            )
-          )}
-        </div>
-
-        {/* User + sign out */}
+      {/* Desktop: persistent sidebar — full or mini icon strip */}
+      {!isMobile && (
         <div style={{
-          padding: '10px 12px',
-          borderTop: '1px solid #e5e5e5',
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', flexShrink: 0, gap: 8,
+          width: sidebarOpen ? SIDEBAR_OPEN : SIDEBAR_MINI,
+          flexShrink: 0, background: '#f9f9f9',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          transition: 'width 0.22s ease',
         }}>
-          <span style={{
-            fontSize: 13, fontWeight: 500, color: '#333',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          }}>
-            {user.name}
-          </span>
-          <form action={logoutAction}>
-            <button type="submit" style={{
-              fontSize: 12, color: '#666', background: 'none',
-              border: '1px solid #ddd', borderRadius: 6,
-              padding: '4px 8px', cursor: 'pointer', whiteSpace: 'nowrap',
-            }}>
-              Sign out
-            </button>
-          </form>
+          {sidebarOpen ? (
+            <SidebarContent
+              sidebarOpen={true}
+              onClose={() => setSidebarOpen(false)}
+              onNewChat={newChat}
+              groups={groups}
+              activeId={activeId}
+              openConv={openConv}
+              deleteConv={deleteConv}
+              isMobile={false}
+              user={user}
+            />
+          ) : (
+            /* Mini icon strip */
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4 }}>
+              <LogoToggleBtn onClick={() => setSidebarOpen(true)} />
+              <IconBtn onClick={newChat} title="New chat">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </IconBtn>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* ══════════════════════════ MAIN AREA ═══════ */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-        {/* Open sidebar button — shown only when sidebar is closed */}
-        {!sidebarOpen && (
-          <button
-            onClick={() => setSidebarOpen(true)}
-            title="Open sidebar"
-            style={{
-              position: 'absolute', top: 12, left: 12, zIndex: 10,
-              background: '#fff', border: '1px solid #e5e5e5',
-              borderRadius: 8, padding: '6px 8px', cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 6,
-              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-              color: '#555', fontSize: 13,
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
-            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+        {/* Top bar — shown when sidebar is closed (desktop mini strip) or on mobile */}
+        {(!sidebarOpen || isMobile) && (
+          <div style={{
+            flexShrink: 0, height: 48,
+            display: 'flex', alignItems: 'center',
+            padding: '0 8px',
+            gap: 4,
+          }}>
+            {/* On mobile: hamburger to open sidebar */}
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(true)}
+                style={{
+                  background: 'none', border: 'none', borderRadius: 8,
+                  padding: 6, cursor: 'pointer', color: '#777',
+                  display: 'flex', alignItems: 'center',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.06)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <path d="M9 3v18" />
+                </svg>
+              </button>
+            )}
+
+            {/* Pargo AI brand — shown when desktop sidebar is collapsed */}
+            {!isMobile && !sidebarOpen && (
+              <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', paddingLeft: 4 }}>
+                Pargo AI
+              </span>
+            )}
+          </div>
         )}
 
-        {/* Chat messages */}
-        <div className="chat-scroll">
-          {empty ? (
-            <div style={{
-              maxWidth: 700, margin: '0 auto',
-              padding: `${isMobile ? 32 : 50}px 16px 0`,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20,
-            }}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{
-                  width: 52, height: 52, borderRadius: '50%', background: '#000',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  margin: '0 auto 20px', fontSize: 22, fontWeight: 700, color: '#fff',
-                }}>P</div>
-                <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
-                  What can I help with?
-                </h1>
-              </div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-                gap: 10, width: '100%',
-              }}>
-                {SUGGESTIONS.map(s => (
-                  <button
-                    key={s.label}
-                    className="suggestion-card"
-                    onClick={() => send(`${s.label} ${s.sub}`)}
-                  >
-                    <div style={{ fontWeight: 500 }}>{s.label}</div>
-                    <div style={{ color: '#666', fontSize: 13, marginTop: 2 }}>{s.sub}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div style={{ paddingTop: 24, paddingBottom: 16 }}>
-              {messages.map((m, i) => (
-                <Message
-                  key={i}
-                  role={m.role}
-                  content={m.content}
-                  isMobile={isMobile}
-                  onGuestFormSubmit={handleGuestFormSubmit}
-                  guestFormDone={guestFormDone}
-                  onSearchFormSubmit={handleSearchFormSubmit}
-                  searchFormDone={searchFormDone}
-                />
-              ))}
-              {busy && <Thinking isMobile={isMobile} />}
-              <div ref={bottomRef} />
-            </div>
-          )}
-        </div>
-
-        {/* Input */}
-        <div style={{ flexShrink: 0, padding: `10px 12px ${isMobile ? 16 : 24}px`, paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : 24, background: '#fff' }}>
+        {empty ? (
+          /* ── Empty state: centered hero + input ── */
           <div style={{
-            maxWidth: 768, margin: '0 auto', background: '#fff',
-            borderRadius: 24, padding: '10px 10px 10px 18px',
-            display: 'flex', alignItems: 'flex-end', gap: 8,
-            boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 4px 14px rgba(0,0,0,0.07)',
+            flex: 1,
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '0 16px 40px',
           }}>
-            <textarea
-              ref={taRef}
-              rows={1}
-              value={input}
-              placeholder="Message Pargo AI"
-              onChange={e => { setInput(e.target.value); resize(); }}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
-              style={{
-                flex: 1, border: 'none', outline: 'none', resize: 'none',
-                background: 'transparent', color: '#0d0d0d',
-                fontSize: 15, lineHeight: 1.6,
-                minHeight: 24, maxHeight: 200, paddingTop: 2,
-              }}
-            />
-            <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
+            <div style={{
+              width: 52, height: 52, borderRadius: '50%', background: '#000',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              marginBottom: 16, fontSize: 20, fontWeight: 700, color: '#fff',
+            }}>P</div>
+            <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
+              How can I help you?
+            </h1>
+            <p style={{ color: '#999', fontSize: 14, margin: '8px 0 28px' }}>
+              Search and book hotels worldwide.
+            </p>
+            <div style={{
+              width: '100%', maxWidth: 640, background: '#fff',
+              borderRadius: 24, padding: '10px 10px 10px 18px',
+              display: 'flex', alignItems: 'flex-end', gap: 8,
+              boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 4px 14px rgba(0,0,0,0.07)',
+            }}>
+              <textarea
+                ref={taRef}
+                rows={1}
+                value={input}
+                placeholder="Message Pargo AI"
+                onChange={e => { setInput(e.target.value); resize(); }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                style={{
+                  flex: 1, border: 'none', outline: 'none', resize: 'none',
+                  background: 'transparent', color: '#0d0d0d',
+                  fontSize: 15, lineHeight: 1.6,
+                  minHeight: 24, maxHeight: 200, paddingTop: 2,
+                }}
+              />
+              <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
+            </div>
           </div>
-          <p style={{ textAlign: 'center', color: '#b4b4b4', fontSize: 12, marginTop: 10 }}>
-            Pargo AI can make mistakes. Check important info.
-          </p>
-        </div>
+        ) : (
+          /* ── Chat state: messages + input at bottom ── */
+          <>
+            <div ref={scrollRef} className="chat-scroll" style={{ flex: 1 }}>
+              <div style={{ paddingTop: 24, paddingBottom: 16 }}>
+                {messages.map((m, i) => (
+                  <React.Fragment key={i}>
+                    <Message
+                      role={m.role}
+                      content={m.content}
+                      isMobile={isMobile}
+                      onGuestFormSubmit={handleGuestFormSubmit}
+                      guestFormDone={guestFormDone}
+                      onSearchFormSubmit={handleSearchFormSubmit}
+                      searchFormDone={searchFormDone}
+                      onHotelSelect={handleHotelSelect}
+                      hotelListDone={hotelListDone}
+                      onPaymentComplete={handlePaymentComplete}
+                      paymentGateDone={paymentGateDone}
+                      guestRef={pendingGuestRef}
+                    />
+                  </React.Fragment>
+                ))}
+                {busy && <Thinking isMobile={isMobile} />}
+                <div ref={bottomRef} />
+              </div>
+            </div>
+
+            <div style={{
+              flexShrink: 0,
+              padding: `10px 12px ${isMobile ? 16 : 24}px`,
+              paddingBottom: isMobile ? 'max(16px, env(safe-area-inset-bottom))' : 24,
+              background: '#fff',
+            }}>
+              <div style={{
+                maxWidth: 768, margin: '0 auto', background: '#fff',
+                borderRadius: 24, padding: '10px 10px 10px 18px',
+                display: 'flex', alignItems: 'flex-end', gap: 8,
+                boxShadow: '0 0 0 1px rgba(0,0,0,0.08), 0 4px 14px rgba(0,0,0,0.07)',
+              }}>
+                <textarea
+                  ref={taRef}
+                  rows={1}
+                  value={input}
+                  placeholder="Message Pargo AI"
+                  onChange={e => { setInput(e.target.value); resize(); }}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                  style={{
+                    flex: 1, border: 'none', outline: 'none', resize: 'none',
+                    background: 'transparent', color: '#0d0d0d',
+                    fontSize: 15, lineHeight: 1.6,
+                    minHeight: 24, maxHeight: 200, paddingTop: 2,
+                  }}
+                />
+                <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
+              </div>
+              <p style={{ textAlign: 'center', color: '#b4b4b4', fontSize: 12, marginTop: 10 }}>
+                Pargo AI can make mistakes. Check important info.
+              </p>
+            </div>
+          </>
+        )}
 
       </div>
     </div>

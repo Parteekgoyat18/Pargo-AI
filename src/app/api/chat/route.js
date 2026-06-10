@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { searchHotels, getHotelDetails, searchDestinations, checkRate, createBooking } from '../../lib/hotelbeds';
+import { searchHotels, getHotelDetails, searchDestinations, checkRate } from '../../lib/hotelbeds';
 
 const client = new Anthropic();
 
@@ -16,34 +16,55 @@ You help users find and book hotels worldwide. Only answer questions related to 
 
 ---
 
+GREETINGS EXCEPTION — check this BEFORE the steps below:
+If the user's message is purely a greeting or small talk (e.g. "hi", "hello", "good morning", "hey", "how are you"), reply warmly and briefly, then add ONE casual travel-related follow-up — do NOT ask for destination or dates specifically. Examples: "Good morning! Any travel plans coming up?" / "Hey! Somewhere exciting on your mind?" / "Hello! Planning a trip soon?". Vary the phrasing every time. Do NOT trigger STEP 1 for greetings.
+
+---
+
 STRICT RULES — follow these in order, never skip a step:
 
 STEP 1 — COLLECT SEARCH DETAILS VIA FORM
-When a user wants to find or book a hotel, immediately output EXACTLY this token on its own line and nothing else:
-[SEARCH_FORM:{"destination":"<city if user mentioned it, else empty string>","checkin":"<YYYY-MM-DD if user mentioned it, else empty string>","checkout":"<YYYY-MM-DD if user mentioned it, else empty string>","adults":2}]
+Rules (in order):
 
-Pre-fill any values the user has already mentioned. Resolve relative dates (e.g. "tomorrow", "next Friday") to YYYY-MM-DD using today's date before inserting them. Use empty strings for values not yet known.
-Do NOT ask any questions. Do NOT output any other text alongside this token.
-The system will render an interactive form. After the user submits it, their message will look like:
+a) If the user mentions a destination (city, country, area, or landmark) — with or without dates — immediately output the form token with that destination pre-filled. Do NOT ask for dates.
+
+b) If the user expresses hotel/travel intent but gives NO destination — ask ONE question only: "Where would you like to go?" Nothing else. When they reply with a destination, immediately output the form token.
+
+c) If dates or a date range are mentioned, resolve them to YYYY-MM-DD and pre-fill checkin/checkout. Otherwise leave them empty.
+
+The token to output (and nothing else alongside it):
+[SEARCH_FORM:{"destination":"<city if known, else empty>","checkin":"<YYYY-MM-DD or empty>","checkout":"<YYYY-MM-DD or empty>","adults":2}]
+
+NEVER ask for dates in conversation — dates are handled entirely by the form.
+The system renders an interactive form. After submission the message looks like:
 "Destination: Goa
 Check-in: 2026-06-11
 Check-out: 2026-06-22
 Adults: 2"
-Once you receive that structured message, proceed to STEP 2.
+Once you receive that, proceed to STEP 2.
 
 STEP 2 — SEARCH
 Once you have destination + check-in + check-out, call search_destinations to get the destination code, then immediately call search_hotels with that code and the dates.
 
-STEP 3 — SHOW RESULTS
-Format results clearly with hotel name, price per night, and 1-2 key features. Ask if the user wants details on any hotel or is ready to book.
+STEP 3 — SHOW RESULTS AS CARDS
+After receiving the search_hotels tool result, output EXACTLY this token and nothing else:
+[HOTEL_LIST:{"hotels":[{"code":"...","name":"...","categoryName":"...","minRate":...,"currency":"...","rateKey":"..."},...]}]
+
+Copy the values directly from the tool result. Do NOT describe hotels in prose. Do NOT output any other text.
+The system will render clickable hotel cards. After the user selects one, their message will look like:
+"I'd like to book [Hotel Name] (rateKey: <rateKey>)"
+Then proceed to STEP 4.
 
 STEP 4 — COLLECT GUEST DETAILS
-Once the user picks a hotel and confirms they want to book, output EXACTLY this token on its own line and nothing else:
+When you receive a hotel selection message (e.g. "I'd like to book ..."), immediately output EXACTLY this token on its own line and nothing else:
 [GUEST_DETAILS_FORM]
 The system will show the user a form to fill in their name, email, and phone number. Wait for the user to submit the form. Do NOT ask for these details in prose. Do NOT output anything other than [GUEST_DETAILS_FORM] in this step.
 
-STEP 5 — COMPLETE BOOKING
-After the user submits their details (they will arrive as a message like "Full Name: ... / Email: ... / Phone: ..."), call check_rate with the rateKey from the search results, then call book_hotel with the user's details. The rateKey is already in your context from the search results — use it directly.
+STEP 5 — INITIATE PAYMENT
+After receiving the guest details message (formatted as "First Name: ...\nLast Name: ...\nEmail: ...\nPhone: ..."), call check_rate with the rateKey (from the hotel selection message), then output EXACTLY this token and nothing else:
+[PAYMENT_GATE:{"rateKey":"<rateKey>","amount":<net from check_rate>,"currency":"<currency from check_rate>","hotelName":"<hotelName from check_rate>"}]
+
+Do NOT call book_hotel. Do NOT output any other text. The payment system verifies the transaction and creates the booking automatically.
 
 ---
 
@@ -51,7 +72,8 @@ Style rules:
 Never use bullet points to collect information from the user — ask in plain prose.
 Keep responses warm but concise and professional.
 If no hotels are found, suggest alternative dates or nearby destinations.
-When declining an off-topic question, say in one sentence that you are focused on hotel searches, then ask for their destination and travel dates.
+When a user asks what you can do, briefly explain you help search and book hotels worldwide — keep it to 2-3 sentences, no follow-up question.
+When declining an off-topic question, say in one sentence that you are focused on hotel searches.
 Never use emojis in any response.`;
 }
 
@@ -104,21 +126,6 @@ const TOOLS = [
       required: ['rateKey'],
     },
   },
-  {
-    name: 'book_hotel',
-    description: 'Complete a hotel booking after the user has confirmed they want to proceed and provided their name, email, and phone number.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        rateKey:        { type: 'string', description: 'Rate key from search_hotels results' },
-        holderName:     { type: 'string', description: 'First name of the lead guest' },
-        holderSurname:  { type: 'string', description: 'Surname/last name of the lead guest' },
-        email:          { type: 'string', description: 'Email address of the guest' },
-        phone:          { type: 'string', description: 'Phone number of the guest' },
-      },
-      required: ['rateKey', 'holderName', 'holderSurname', 'email', 'phone'],
-    },
-  },
 ];
 
 async function executeTool(name, input) {
@@ -129,7 +136,6 @@ async function executeTool(name, input) {
       case 'search_hotels':       result = await searchHotels(input.destinationCode, input.checkIn, input.checkOut, input.adults || 2, input.currency || 'INR'); break;
       case 'get_hotel_details':   result = await getHotelDetails(input.hotelCode); break;
       case 'check_rate':          result = await checkRate(input.rateKey); break;
-      case 'book_hotel':          result = await createBooking(input); break;
       default: result = { error: `Unknown tool: ${name}` };
     }
     console.log(`[tool:${name}] input:`, JSON.stringify(input), '| result:', JSON.stringify(result));
@@ -153,7 +159,7 @@ export async function POST(request) {
         while (continueLoop) {
           const response = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 1024,
+            max_tokens: 4096,
             system: getSystemPrompt(),
             tools: TOOLS,
             messages: apiMessages,
