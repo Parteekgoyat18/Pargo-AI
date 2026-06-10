@@ -1207,7 +1207,7 @@ export default function ChatUI({ user }) {
             />
           ) : (
             /* Mini icon strip */
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4, flex: 1 }}>
               <LogoToggleBtn onClick={() => setSidebarOpen(true)} />
               <IconBtn onClick={newChat} title="New chat">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -1215,6 +1215,18 @@ export default function ChatUI({ user }) {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" />
                 </svg>
               </IconBtn>
+
+              {/* User avatar pinned to bottom */}
+              <div style={{ flex: 1 }} />
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: '#555', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, marginBottom: 12, flexShrink: 0,
+                cursor: 'default',
+              }}>
+                {(user.name || 'U').slice(0, 2).toUpperCase()}
+              </div>
             </div>
           )}
         </div>
