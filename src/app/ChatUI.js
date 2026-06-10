@@ -119,7 +119,7 @@ function Thinking({ isMobile }) {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
@@ -135,6 +135,14 @@ function Message({ role, content, isMobile }) {
       </div>
     );
   }
+  if (content.trim() === '[GUEST_DETAILS_FORM]') {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
+      </div>
+    );
+  }
   return (
     <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
       <GPTAvatar />
@@ -142,6 +150,129 @@ function Message({ role, content, isMobile }) {
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
+  );
+}
+
+/* ── Guest Details Form ──────────────────────────────── */
+function GuestDetailsForm({ onSubmit, done }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [email,     setEmail]     = useState('');
+  const [phone,     setPhone]     = useState('');
+
+  const valid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    onSubmit(firstName.trim(), lastName.trim(), email.trim(), phone.trim());
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Details submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  };
+  const labelStyle = {
+    display: 'block', marginBottom: 12,
+  };
+  const labelTextStyle = {
+    display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5,
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      style={{
+        background: '#fff', border: '1px solid #e5e5e5',
+        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+      }}
+    >
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Enter your booking details
+      </p>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 0 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>First Name</span>
+          <input
+            type="text" value={firstName} required
+            onChange={e => setFirstName(e.target.value)}
+            placeholder="Rahul"
+            style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Last Name</span>
+          <input
+            type="text" value={lastName} required
+            onChange={e => setLastName(e.target.value)}
+            placeholder="Sharma"
+            style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'}
+            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+          />
+        </label>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Email Address</span>
+        <input
+          type="email" value={email} required
+          onChange={e => setEmail(e.target.value)}
+          placeholder="rahul@example.com"
+          style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'}
+          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+        />
+      </label>
+
+      <label style={{ ...labelStyle, marginBottom: 18 }}>
+        <span style={labelTextStyle}>Phone Number</span>
+        <input
+          type="tel" value={phone} required
+          onChange={e => setPhone(e.target.value)}
+          placeholder="9834725737"
+          style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'}
+          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
+        />
+      </label>
+
+      <button
+        type="submit"
+        disabled={!valid}
+        style={{
+          width: '100%', padding: '11px',
+          borderRadius: 10, border: 'none',
+          background: valid ? '#000' : '#d9d9d9',
+          color: '#fff', fontSize: 14, fontWeight: 600,
+          cursor: valid ? 'pointer' : 'not-allowed',
+          transition: 'background 0.15s',
+        }}
+      >
+        Confirm Booking
+      </button>
+    </form>
   );
 }
 
@@ -296,6 +427,16 @@ export default function ChatUI({ user }) {
       setBusy(false);
       setMessages(p => [...p, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
     }
+  }
+
+  /* ── Guest form: done when a user message exists after the last form marker ── */
+  const lastFormIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim() === '[GUEST_DETAILS_FORM]' ? i : acc, -1);
+  const guestFormDone = lastFormIdx !== -1 && messages.slice(lastFormIdx + 1).some(m => m.role === 'user');
+
+  function handleGuestFormSubmit(firstName, lastName, email, phone) {
+    const msg = `First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}`;
+    send(msg);
   }
 
   const empty  = messages.length === 0;
@@ -508,7 +649,16 @@ export default function ChatUI({ user }) {
             </div>
           ) : (
             <div style={{ paddingTop: 24, paddingBottom: 16 }}>
-              {messages.map((m, i) => <Message key={i} role={m.role} content={m.content} isMobile={isMobile} />)}
+              {messages.map((m, i) => (
+                <Message
+                  key={i}
+                  role={m.role}
+                  content={m.content}
+                  isMobile={isMobile}
+                  onGuestFormSubmit={handleGuestFormSubmit}
+                  guestFormDone={guestFormDone}
+                />
+              ))}
               {busy && <Thinking isMobile={isMobile} />}
               <div ref={bottomRef} />
             </div>
