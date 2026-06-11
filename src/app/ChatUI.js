@@ -253,7 +253,7 @@ function LogoToggleBtn({ onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         background: hov ? 'rgba(0,0,0,0.07)' : 'none',
-        border: 'none', cursor: 'pointer',
+        border: 'none', cursor: 'ew-resize',
         width: 36, height: 36, borderRadius: 8,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         color: '#555',
@@ -291,7 +291,7 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             onClick={onClose}
             title="Close sidebar"
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
+              background: 'none', border: 'none', cursor: 'ew-resize',
               width: 34, height: 34, borderRadius: 8, color: '#555',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
@@ -304,9 +304,20 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             </svg>
           </button>
 
-          <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', flex: 1, paddingLeft: 4, whiteSpace: 'nowrap' }}>
+          <button
+            onClick={onNewChat}
+            title="New chat"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 15, fontWeight: 600, color: '#0d0d0d',
+              flex: 1, paddingLeft: 4, whiteSpace: 'nowrap',
+              textAlign: 'left', padding: '0 0 0 4px', borderRadius: 6,
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = '#555'}
+            onMouseLeave={e => e.currentTarget.style.color = '#0d0d0d'}
+          >
             Pargo AI
-          </span>
+          </button>
 
           <button
             onClick={onNewChat}
@@ -1614,9 +1625,19 @@ export default function ChatUI({ user }) {
 
             {/* Pargo AI brand */}
             {(isMobile || !sidebarOpen) && (
-              <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', paddingLeft: isMobile ? 2 : 4 }}>
+              <button
+                onClick={newChat}
+                title="New chat"
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: 15, fontWeight: 600, color: '#0d0d0d',
+                  paddingLeft: isMobile ? 2 : 4, borderRadius: 6, padding: isMobile ? '0 0 0 2px' : '0 0 0 4px',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#555'}
+                onMouseLeave={e => e.currentTarget.style.color = '#0d0d0d'}
+              >
                 Pargo AI
-              </span>
+              </button>
             )}
           </div>
         )}
