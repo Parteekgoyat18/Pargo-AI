@@ -823,9 +823,10 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
   const [destination, setDestination] = useState(prefill.destination || '');
   const [checkin,     setCheckin]     = useState(prefill.checkin  || '');
   const [checkout,    setCheckout]    = useState(prefill.checkout || '');
-  const [adults,      setAdults]      = useState(prefill.adults   || 2);
+  const [adultsStr, setAdultsStr] = useState(String(prefill.adults || 2));
 
-  const valid = destination.trim() && checkin && checkout && checkin < checkout;
+  const adults = Math.max(1, parseInt(adultsStr, 10) || 1);
+  const valid  = destination.trim() && checkin && checkout && checkin < checkout;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -908,11 +909,19 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
       <label style={{ ...labelStyle, marginBottom: 18 }}>
         <span style={labelTextStyle}>Adults</span>
         <input
-          type="number" value={adults} min={1} required
-          onChange={e => setAdults(Math.max(1, Number(e.target.value)))}
+          type="number"
+          value={adultsStr}
+          min={1}
+          inputMode="numeric"
+          required
+          onChange={e => setAdultsStr(e.target.value)}
+          onBlur={e => {
+            const n = Math.max(1, parseInt(e.target.value, 10) || 1);
+            setAdultsStr(String(n));
+            e.target.style.borderColor = '#e0e0e0';
+          }}
           style={fieldStyle}
           onFocus={e => e.target.style.borderColor = '#999'}
-          onBlur={e => e.target.style.borderColor = '#e0e0e0'}
         />
       </label>
 
