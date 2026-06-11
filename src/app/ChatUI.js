@@ -32,44 +32,191 @@ function groupByDate(list) {
   return g;
 }
 
-/* ── Conversation list item ──────────────────────────── */
-function ConvItem({ conv, active, onOpen, onDelete, isMobile }) {
+/* ── Dropdown menu button inside ConvItem ────────────── */
+function ConvMenuBtn({ icon, label, onClick, danger }) {
   const [hov, setHov] = useState(false);
   return (
-    <div
-      onClick={onOpen}
+    <button
+      onClick={onClick}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        padding: '6px 10px', borderRadius: 8, cursor: 'pointer', marginBottom: 1,
-        background: active ? 'rgba(0,0,0,0.07)' : hov ? 'rgba(0,0,0,0.04)' : 'transparent',
+        display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+        padding: '7px 10px', border: 'none',
+        background: hov ? (danger ? '#fff5f5' : 'rgba(0,0,0,0.05)') : 'none',
+        cursor: 'pointer', borderRadius: 6, fontSize: 13,
+        color: danger ? '#d33' : '#2d2d2d', textAlign: 'left',
+        fontFamily: 'inherit',
+      }}
+    >
+      <span style={{ color: danger ? '#d33' : '#666', display: 'flex', alignItems: 'center' }}>{icon}</span>
+      {label}
+    </button>
+  );
+}
+
+/* ── Conversation list item ──────────────────────────── */
+function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile }) {
+  const [hov, setHov] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [editVal, setEditVal] = useState(conv.title);
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!editing) setEditVal(conv.title);
+  }, [conv.title, editing]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDown(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target) &&
+          btnRef.current && !btnRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    function onScroll() { setMenuOpen(false); }
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('scroll', onScroll, true);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (editing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editing]);
+
+  function openMenu(e) {
+    e.stopPropagation();
+    const rect = btnRef.current.getBoundingClientRect();
+    setMenuPos({ top: rect.bottom + 2, right: window.innerWidth - rect.right });
+    setMenuOpen(v => !v);
+  }
+
+  function startRename() {
+    setMenuOpen(false);
+    setEditVal(conv.title);
+    setEditing(true);
+  }
+
+  function commitRename() {
+    const v = editVal.trim();
+    if (v && v !== conv.title) onRename(v);
+    setEditing(false);
+  }
+
+  const showActions = (hov || isMobile || menuOpen) && !editing;
+
+  return (
+    <div
+      onClick={editing ? undefined : onOpen}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => { if (!menuOpen) setHov(false); }}
+      style={{
+        padding: '6px 10px', borderRadius: 8,
+        cursor: editing ? 'default' : 'pointer', marginBottom: 1,
+        background: active ? 'rgba(0,0,0,0.07)' : (hov || menuOpen) ? 'rgba(0,0,0,0.04)' : 'transparent',
         display: 'flex', alignItems: 'center', gap: 6,
         position: 'relative',
       }}
     >
-      <span style={{
-        fontSize: 13.5, color: active ? '#0d0d0d' : '#2d2d2d', flex: 1,
-        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-        fontWeight: active ? 500 : 400,
-      }}>
-        {conv.title}
-      </span>
-      {(hov || isMobile) && (
-        <button
-          onClick={onDelete}
-          title="Delete"
-          style={{
-            flexShrink: 0, background: 'none', border: 'none',
-            cursor: 'pointer', padding: '2px 3px', color: '#888',
-            display: 'flex', alignItems: 'center', borderRadius: 4,
+      {conv.pinned && !editing && (
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="#aaa" style={{ flexShrink: 0 }}>
+          <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+        </svg>
+      )}
+      {editing ? (
+        <input
+          ref={inputRef}
+          value={editVal}
+          onChange={e => setEditVal(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={e => {
+            if (e.key === 'Enter') { e.preventDefault(); commitRename(); }
+            if (e.key === 'Escape') setEditing(false);
           }}
-          onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#333'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#888'; }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />
-          </svg>
-        </button>
+          onClick={e => e.stopPropagation()}
+          style={{
+            flex: 1, fontSize: 13.5, color: '#0d0d0d',
+            border: 'none', borderBottom: '1.5px solid #999',
+            background: 'transparent', outline: 'none', padding: '0 2px',
+            fontFamily: 'inherit',
+          }}
+        />
+      ) : (
+        <span style={{
+          fontSize: 13.5, color: active ? '#0d0d0d' : '#2d2d2d', flex: 1,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          fontWeight: active ? 500 : 400,
+        }}>
+          {conv.title}
+        </span>
+      )}
+      {showActions && (
+        <>
+          <button
+            ref={btnRef}
+            onClick={openMenu}
+            title="More options"
+            style={{
+              background: menuOpen ? 'rgba(0,0,0,0.08)' : 'none', border: 'none',
+              cursor: 'pointer', padding: '3px 4px', color: '#777', flexShrink: 0,
+              display: 'flex', alignItems: 'center', borderRadius: 5,
+            }}
+            onMouseEnter={e => { e.stopPropagation(); if (!menuOpen) e.currentTarget.style.background = 'rgba(0,0,0,0.07)'; }}
+            onMouseLeave={e => { if (!menuOpen) e.currentTarget.style.background = 'none'; }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>
+            </svg>
+          </button>
+          {menuOpen && menuPos && (
+            <div
+              ref={menuRef}
+              style={{
+                position: 'fixed',
+                top: menuPos.top,
+                right: menuPos.right,
+                zIndex: 9999,
+                background: '#fff',
+                border: '1px solid #e8e8e8',
+                borderRadius: 8,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.13)',
+                minWidth: 152,
+                padding: '4px',
+              }}
+            >
+              <ConvMenuBtn
+                label={conv.pinned ? 'Unpin' : 'Pin'}
+                icon={conv.pinned
+                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/><line x1="4" y1="4" x2="20" y2="20" strokeLinecap="round"/></svg>
+                  : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/></svg>
+                }
+                onClick={e => { e.stopPropagation(); onPin(); setMenuOpen(false); setHov(false); }}
+              />
+              <ConvMenuBtn
+                label="Rename"
+                icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>}
+                onClick={e => { e.stopPropagation(); startRename(); }}
+              />
+              <div style={{ height: 1, background: '#f0f0f0', margin: '4px 0' }} />
+              <ConvMenuBtn
+                label="Delete"
+                danger
+                icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>}
+                onClick={e => { e.stopPropagation(); setMenuOpen(false); setHov(false); onDelete(e); }}
+              />
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -130,7 +277,11 @@ function LogoToggleBtn({ onClick }) {
 }
 
 /* ── Sidebar content (shared by mobile overlay + desktop) */
-function SidebarContent({ onClose, onNewChat, groups, activeId, openConv, deleteConv, isMobile, user }) {
+function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteConv, renameConv, pinConv, isMobile, user }) {
+  const pinnedConvs  = convs.filter(c => c.pinned);
+  const unpinnedConvs = convs.filter(c => !c.pinned);
+  const groups = groupByDate(unpinnedConvs);
+
   return (
     <>
       {/* Top bar */}
@@ -178,11 +329,41 @@ function SidebarContent({ onClose, onNewChat, groups, activeId, openConv, delete
 
       {/* Conversation list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
-        {Object.values(groups).every(g => g.length === 0) && (
+        {convs.length === 0 && (
           <p style={{ fontSize: 13, color: '#bbb', textAlign: 'center', marginTop: 32, lineHeight: 1.5 }}>
             No conversations yet
           </p>
         )}
+
+        {/* Pinned section */}
+        {pinnedConvs.length > 0 && (
+          <div style={{ marginBottom: 8 }}>
+            <p style={{
+              fontSize: 11, color: '#999', fontWeight: 600,
+              padding: '10px 10px 4px', margin: 0, letterSpacing: '0.3px',
+              display: 'flex', alignItems: 'center', gap: 5,
+            }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z"/>
+              </svg>
+              Pinned
+            </p>
+            {pinnedConvs.map(c => (
+              <ConvItem
+                key={c.id}
+                conv={c}
+                active={c.id === activeId}
+                onOpen={() => openConv(c.id)}
+                onDelete={e => deleteConv(c.id, e)}
+                onRename={newTitle => renameConv(c.id, newTitle)}
+                onPin={() => pinConv(c.id)}
+                isMobile={isMobile}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Date groups for unpinned */}
         {Object.entries(groups).map(([label, items]) =>
           items.length > 0 && (
             <div key={label} style={{ marginBottom: 8 }}>
@@ -199,6 +380,8 @@ function SidebarContent({ onClose, onNewChat, groups, activeId, openConv, delete
                   active={c.id === activeId}
                   onOpen={() => openConv(c.id)}
                   onDelete={e => deleteConv(c.id, e)}
+                  onRename={newTitle => renameConv(c.id, newTitle)}
+                  onPin={() => pinConv(c.id)}
                   isMobile={isMobile}
                 />
               ))}
@@ -1193,6 +1376,22 @@ export default function ChatUI({ user }) {
     }
   }
 
+  function renameConv(id, newTitle) {
+    setConvs(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, title: newTitle } : c);
+      try { localStorage.setItem(listKey, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }
+
+  function pinConv(id) {
+    setConvs(prev => {
+      const updated = prev.map(c => c.id === id ? { ...c, pinned: !c.pinned } : c);
+      try { localStorage.setItem(listKey, JSON.stringify(updated)); } catch {}
+      return updated;
+    });
+  }
+
   function resize() {
     const ta = taRef.current;
     if (!ta) return;
@@ -1290,7 +1489,6 @@ export default function ChatUI({ user }) {
   }
 
   const empty  = messages.length === 0;
-  const groups = groupByDate(convs);
 
   /* ── Sidebar widths ── */
   const SIDEBAR_OPEN = 260;
@@ -1321,10 +1519,12 @@ export default function ChatUI({ user }) {
               sidebarOpen={true}
               onClose={() => setSidebarOpen(false)}
               onNewChat={newChat}
-              groups={groups}
+              convs={convs}
               activeId={activeId}
               openConv={openConv}
               deleteConv={deleteConv}
+              renameConv={renameConv}
+              pinConv={pinConv}
               isMobile={isMobile}
               user={user}
             />
@@ -1346,10 +1546,12 @@ export default function ChatUI({ user }) {
               sidebarOpen={true}
               onClose={() => setSidebarOpen(false)}
               onNewChat={newChat}
-              groups={groups}
+              convs={convs}
               activeId={activeId}
               openConv={openConv}
               deleteConv={deleteConv}
+              renameConv={renameConv}
+              pinConv={pinConv}
               isMobile={false}
               user={user}
             />
