@@ -20,6 +20,10 @@ const API_KEY    = process.env.HOTELBEDS_API_KEY    || '';
 const SECRET     = process.env.HOTELBEDS_SECRET     || '';
 const BASE_URL   = process.env.HOTELBEDS_BASE_URL   || 'https://api.test.hotelbeds.com';
 
+// Module-level image cache — populated during searchHotels, read by getHotelImages.
+// Both routes run in the same Next.js process so the cache persists between requests.
+const _imageCache = new Map();
+
 function getHeaders() {
   const timestamp = Math.floor(Date.now() / 1000).toString();
   const signature = crypto.createHash('sha256').update(API_KEY + SECRET + timestamp).digest('hex');
@@ -56,20 +60,44 @@ export async function searchHotels(destinationCode, checkIn, checkOut, adults = 
   const apiCurrency = data.hotels.currency || data.hotels.hotels[0]?.currency || 'EUR';
   const codes = hotelList.map(h => h.code).join(',');
 
-  // Run exchange-rate lookup and facilities fetch in parallel
+  // Run exchange-rate lookup and content fetch (facilities + images) in parallel
   const [rate, facilitiesMap] = await Promise.all([
     apiCurrency === 'EUR' ? getEurToInrRate() : Promise.resolve(1),
     (async () => {
       const map = {};
       try {
-        const qs = new URLSearchParams({ codes, fields: 'facilities', language: 'ENG', from: '1', to: String(hotelList.length) });
+        const qs = new URLSearchParams({ codes, fields: 'facilities,images', language: 'ENG', from: '1', to: String(hotelList.length) });
         const res = await fetch(`${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`, { headers: getHeaders() });
         if (res.ok) {
           (await res.json()).hotels?.forEach(h => {
-            map[String(h.code)] = (h.facilities || []).slice(0, 8).map(f => f.facilityName?.content).filter(Boolean);
+            const codeStr = String(h.code);
+            map[codeStr] = (h.facilities || []).slice(0, 8).map(f => f.facilityName?.content).filter(Boolean);
+
+            // Build image URLs and populate the module-level cache
+            const images = h.images || [];
+            const sorted = [...images].sort((a, b) => {
+              if (a.imageTypeCode === 'GEN' && b.imageTypeCode !== 'GEN') return -1;
+              if (b.imageTypeCode === 'GEN' && a.imageTypeCode !== 'GEN') return 1;
+              return (a.visualOrder || 99) - (b.visualOrder || 99);
+            });
+            const seen = new Set();
+            const urls = [];
+            for (const img of sorted) {
+              if (!img.path || seen.has(img.path)) continue;
+              seen.add(img.path);
+              // path may or may not already include a size prefix — normalise to avoid doubling
+              const cleanPath = img.path.replace(/^(small|medium|bigger|xl|xxl)\//, '');
+              urls.push(`https://photos.hotelbeds.com/giata/bigger/${cleanPath}`);
+              if (urls.length === 5) break;
+            }
+            _imageCache.set(codeStr, urls);
+            console.log(`[searchHotels] hotel ${codeStr}: ${urls.length} images cached`);
+            if (urls[0]) console.log(`[searchHotels] sample URL:`, urls[0]);
           });
         }
-      } catch {}
+      } catch (err) {
+        console.error('[searchHotels] content fetch error:', err.message);
+      }
       return map;
     })(),
   ]);
@@ -253,23 +281,42 @@ export async function createBooking({ rateKey, holderName, holderSurname, email,
   };
 }
 
-/* Fetch up to 5 photos for each hotel code in the comma-separated list.
-   Returns { "12345": ["url1","url2",...], "67890": [...], ... } */
+/* Returns up to 5 photo URLs per hotel code.
+   Images are pre-cached during searchHotels, so this is usually a synchronous cache lookup. */
 export async function getHotelImages(codes) {
-  const map = {};
-  try {
-    const codeList = codes.split(',').map(c => c.trim()).filter(Boolean);
-    const qs = new URLSearchParams({
-      codes,
-      fields: 'images',
-      language: 'ENG',
-      from: '1',
-      to: String(codeList.length),
-    });
-    const res = await fetch(`${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`, { headers: getHeaders() });
-    if (!res.ok) return map;
+  const codeList = codes.split(',').map(c => c.trim()).filter(Boolean);
+  const result = {};
+  const missing = [];
 
+  for (const code of codeList) {
+    if (_imageCache.has(code)) {
+      result[code] = _imageCache.get(code);
+    } else {
+      missing.push(code);
+    }
+  }
+  console.log(`[getHotelImages] cache hit: ${codeList.length - missing.length}/${codeList.length}, missing: ${missing.length}`);
+
+  if (missing.length === 0) return result;
+
+  // Fallback: fetch any codes that weren't in the cache
+  try {
+    const missingStr = missing.join(',');
+    const qs = new URLSearchParams({ codes: missingStr, fields: 'images', language: 'ENG', from: '1', to: String(missing.length) });
+    const url = `${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`;
+    console.log('[getHotelImages] fallback fetch:', url);
+    const res = await fetch(url, { headers: getHeaders() });
+    console.log('[getHotelImages] fallback status:', res.status);
+    if (!res.ok) {
+      const body = await res.text();
+      console.error('[getHotelImages] fallback error:', body.slice(0, 300));
+      return result;
+    }
     const data = await res.json();
+    console.log('[getHotelImages] fallback hotels:', data.hotels?.length);
+    if (data.hotels?.[0]?.images?.[0]) {
+      console.log('[getHotelImages] sample image object:', JSON.stringify(data.hotels[0].images[0]));
+    }
     (data.hotels || []).forEach(h => {
       const images = h.images || [];
       const sorted = [...images].sort((a, b) => {
@@ -282,11 +329,16 @@ export async function getHotelImages(codes) {
       for (const img of sorted) {
         if (!img.path || seen.has(img.path)) continue;
         seen.add(img.path);
-        urls.push(`https://photos.hotelbeds.com/giata/bigger/${img.path}`);
+        const cleanPath = img.path.replace(/^(small|medium|bigger|xl|xxl)\//, '');
+        urls.push(`https://photos.hotelbeds.com/giata/bigger/${cleanPath}`);
         if (urls.length === 5) break;
       }
-      map[String(h.code)] = urls;
+      const codeStr = String(h.code);
+      result[codeStr] = urls;
+      _imageCache.set(codeStr, urls);
     });
-  } catch {}
-  return map;
+  } catch (err) {
+    console.error('[getHotelImages] fallback exception:', err.message);
+  }
+  return result;
 }

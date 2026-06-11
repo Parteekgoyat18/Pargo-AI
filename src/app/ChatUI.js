@@ -424,6 +424,7 @@ function PhotoCarousel({ urls, name }) {
         key={valid[clampedIdx]}
         src={valid[clampedIdx]}
         alt={name}
+        referrerPolicy="no-referrer"
         onError={() => {
           const realIdx = urls.indexOf(valid[clampedIdx]);
           setErrors(p => ({ ...p, [realIdx]: true }));
@@ -549,14 +550,17 @@ function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
 function HotelList({ hotels, onSelect, done, isMobile }) {
   const [imageMap, setImageMap] = useState({});
 
+  // Use a stable string dependency so this only fires when hotel codes change,
+  // not on every re-render (hotels is a new array reference each time).
+  const codesStr = hotels.map(h => h.code).join(',');
+
   useEffect(() => {
-    if (!hotels.length) return;
-    const codes = hotels.map(h => h.code).join(',');
-    fetch(`/api/hotels/images?codes=${codes}`)
-      .then(r => r.json())
+    if (!codesStr) return;
+    fetch(`/api/hotels/images?codes=${codesStr}`)
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(data => setImageMap(data))
-      .catch(() => {});
-  }, [hotels]);
+      .catch(err => console.warn('[HotelList] image fetch failed:', err));
+  }, [codesStr]);
 
   if (done) {
     return (
