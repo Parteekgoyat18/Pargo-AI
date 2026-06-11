@@ -490,14 +490,48 @@ function Thinking({ isMobile }) {
   );
 }
 
+/* ── Service chip (empty-state CTA) ─────────────────── */
+function ServiceChip({ label, sub, icon, onClick }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        padding: '14px 20px', borderRadius: 14, border: '1px solid',
+        borderColor: hov ? '#000' : '#e5e5e5',
+        background: hov ? '#000' : '#fff',
+        color: hov ? '#fff' : '#0d0d0d',
+        cursor: 'pointer', textAlign: 'left',
+        boxShadow: hov ? '0 4px 14px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.05)',
+        transition: 'all 0.15s ease',
+        minWidth: 180,
+      }}
+    >
+      <span style={{ flexShrink: 0, opacity: hov ? 1 : 0.7 }}>{icon}</span>
+      <span>
+        <span style={{ display: 'block', fontWeight: 600, fontSize: 14 }}>{label}</span>
+        <span style={{ display: 'block', fontSize: 12, opacity: 0.6, marginTop: 2 }}>{sub}</span>
+      </span>
+    </button>
+  );
+}
+
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, onFlightPaymentComplete, flightPaymentDone, flightGuestRef }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
-    // Strip rateKey from hotel selection messages before displaying
-    const bookingMatch = content.match(/^I'd like to book (.+?) \(rateKey:/);
-    const display = bookingMatch ? `I'd like to book ${bookingMatch[1]}` : content;
+    // Strip rateKey / offerId from selection messages before displaying
+    const hotelMatch  = content.match(/^I'd like to book (.+?) \(rateKey:/);
+    const flightMatch = content.match(/^I'd like to book (.+?) \(offerId:/);
+    const display = hotelMatch
+      ? `I'd like to book ${hotelMatch[1]}`
+      : flightMatch
+        ? `I'd like to book ${flightMatch[1]}`
+        : content;
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
@@ -553,6 +587,53 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
+      </div>
+    );
+  }
+  // Flight tokens
+  const flightSearchMatch = content.trim().match(FLIGHT_SEARCH_FORM_RE);
+  if (flightSearchMatch) {
+    let prefill = {};
+    try { if (flightSearchMatch[1]) prefill = JSON.parse(flightSearchMatch[1]); } catch {}
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <FlightSearchForm prefill={prefill} onSubmit={onFlightSearchSubmit} done={flightSearchDone} />
+      </div>
+    );
+  }
+  const flightListData = parseFlightListToken(content);
+  if (flightListData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <FlightList flights={flightListData.flights || []} onSelect={onFlightSelect} done={flightListDone} />
+      </div>
+    );
+  }
+  if (content.trim() === '[FLIGHT_GUEST_FORM]') {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <FlightPassengerForm onSubmit={onFlightGuestSubmit} done={flightGuestDone} />
+      </div>
+    );
+  }
+  const flightPaymentData = parseFlightPaymentToken(content);
+  if (flightPaymentData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <FlightPaymentGate data={flightPaymentData} flightGuestRef={flightGuestRef} onComplete={onFlightPaymentComplete} done={flightPaymentDone} />
+      </div>
+    );
+  }
+  const flightBookingData = parseFlightBookingConfirmedToken(content);
+  if (flightBookingData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <FlightBookingConfirmed data={flightBookingData} />
       </div>
     );
   }
@@ -1265,6 +1346,502 @@ function GuestDetailsForm({ onSubmit, done }) {
 }
 
 
+/* ── Flight Search Form ──────────────────────────────── */
+const FLIGHT_SEARCH_FORM_RE = /^\[FLIGHT_SEARCH_FORM(?::(\{[\s\S]*\}))?\]$/;
+
+function FlightSearchForm({ prefill = {}, onSubmit, done }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [from,       setFrom]       = useState(prefill.from       || '');
+  const [to,         setTo]         = useState(prefill.to         || '');
+  const [departure,  setDeparture]  = useState(prefill.departure  || '');
+  const [returnDate, setReturn]     = useState(prefill.return     || '');
+  const [tripType,   setTripType]   = useState(prefill.return ? 'round' : 'one');
+  const [passengers, setPassengers] = useState(String(prefill.passengers || 1));
+  const [cabin,      setCabin]      = useState(prefill.cabin || 'economy');
+
+  const valid = from.trim() && to.trim() && departure;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    const ret = tripType === 'round' ? returnDate : '';
+    onSubmit(from.trim(), to.trim(), departure, ret, parseInt(passengers) || 1, cabin);
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Flight search submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handleSubmit} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Search Flights
+      </p>
+
+      {/* Trip type toggle */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        {['one', 'round'].map(t => (
+          <button key={t} type="button" onClick={() => setTripType(t)} style={{
+            flex: 1, padding: '7px', borderRadius: 8, border: '1px solid',
+            borderColor: tripType === t ? '#000' : '#e0e0e0',
+            background: tripType === t ? '#000' : '#fff',
+            color: tripType === t ? '#fff' : '#666',
+            fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          }}>
+            {t === 'one' ? 'One-way' : 'Round-trip'}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>From</span>
+          <input type="text" value={from} required placeholder="Mumbai" onChange={e => setFrom(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>To</span>
+          <input type="text" value={to} required placeholder="Dubai" onChange={e => setTo(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Departure</span>
+          <input type="date" value={departure} required min={today} onChange={e => setDeparture(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        {tripType === 'round' && (
+          <label style={{ ...labelStyle, flex: 1 }}>
+            <span style={labelTextStyle}>Return</span>
+            <input type="date" value={returnDate} min={departure || today} onChange={e => setReturn(e.target.value)} style={fieldStyle}
+              onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+          </label>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Passengers</span>
+          <input type="number" value={passengers} min={1} max={9} required onChange={e => setPassengers(e.target.value)}
+            onBlur={e => { const n = Math.min(9, Math.max(1, parseInt(e.target.value) || 1)); setPassengers(String(n)); e.target.style.borderColor = '#e0e0e0'; }}
+            style={fieldStyle} onFocus={e => e.target.style.borderColor = '#999'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Cabin</span>
+          <select value={cabin} onChange={e => setCabin(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+            <option value="economy">Economy</option>
+            <option value="premium_economy">Premium Economy</option>
+            <option value="business">Business</option>
+            <option value="first">First</option>
+          </select>
+        </label>
+      </div>
+
+      <button type="submit" disabled={!valid} style={{
+        width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
+        background: valid ? '#000' : '#d9d9d9', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
+      }}>
+        Search Flights
+      </button>
+    </form>
+  );
+}
+
+/* ── Flight List ─────────────────────────────────────── */
+function parseFlightListToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[FLIGHT_LIST:')) return null;
+  try { return JSON.parse(t.slice('[FLIGHT_LIST:'.length, -1)); } catch { return null; }
+}
+
+function FlightCard({ flight, onSelect, done }) {
+  const [hov, setHov] = useState(false);
+  const stops = flight.stops === 0 ? 'Non-stop' : `${flight.stops} stop${flight.stops > 1 ? 's' : ''}`;
+  const cabinLabel = { economy: 'Economy', premium_economy: 'Prem. Economy', business: 'Business', first: 'First' }[flight.cabinClass] || 'Economy';
+
+  return (
+    <div
+      onClick={() => !done && onSelect(flight)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: '#fff', border: `1px solid ${hov && !done ? '#000' : '#e5e5e5'}`,
+        borderRadius: 12, padding: '14px 16px', cursor: done ? 'default' : 'pointer',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        boxShadow: hov && !done ? '0 2px 10px rgba(0,0,0,0.1)' : '0 1px 4px rgba(0,0,0,0.05)',
+      }}
+    >
+      {/* Airline + cabin */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {flight.airlineCode && (
+            <img
+              src={`https://assets.duffel.com/img/airlines/for-light-background/full-color-logo/${flight.airlineCode}.svg`}
+              alt={flight.airline}
+              style={{ height: 18, maxWidth: 60, objectFit: 'contain' }}
+              onError={e => { e.target.style.display = 'none'; }}
+            />
+          )}
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#0d0d0d' }}>{flight.airline}</span>
+        </div>
+        <span style={{ fontSize: 11, color: '#888', background: '#f4f4f4', borderRadius: 6, padding: '2px 8px' }}>
+          {cabinLabel}
+        </span>
+      </div>
+
+      {/* Route + times */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ textAlign: 'center', minWidth: 44 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#0d0d0d' }}>{flight.departure.time}</div>
+          <div style={{ fontSize: 11, color: '#888' }}>{flight.origin}</div>
+          <div style={{ fontSize: 11, color: '#aaa' }}>{flight.departure.date}</div>
+        </div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <div style={{ fontSize: 11, color: '#888' }}>{flight.duration}</div>
+          <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 4 }}>
+            <div style={{ flex: 1, height: 1, background: '#e0e0e0' }} />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#aaa" strokeWidth={1.5}>
+              <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <div style={{ fontSize: 11, color: flight.stops === 0 ? '#16a34a' : '#d97706', fontWeight: 500 }}>{stops}</div>
+        </div>
+        <div style={{ textAlign: 'center', minWidth: 44 }}>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#0d0d0d' }}>{flight.arrival.time}</div>
+          <div style={{ fontSize: 11, color: '#888' }}>{flight.destination}</div>
+          <div style={{ fontSize: 11, color: '#aaa' }}>{flight.arrival.date}</div>
+        </div>
+        <div style={{ marginLeft: 'auto', textAlign: 'right', paddingLeft: 12, borderLeft: '1px solid #f0f0f0' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#0d0d0d' }}>
+            {Number(flight.amount).toLocaleString('en-IN')}
+          </div>
+          <div style={{ fontSize: 11, color: '#888' }}>{flight.currency}</div>
+        </div>
+      </div>
+
+      {!done && (
+        <div style={{ fontSize: 12, color: hov ? '#000' : '#888', textAlign: 'right', marginTop: 4, fontWeight: hov ? 600 : 400 }}>
+          {hov ? 'Click to select →' : 'Select'}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FlightList({ flights, onSelect, done }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 480 }}>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#666' }}>
+        {flights.length} flight{flights.length !== 1 ? 's' : ''} found — sorted by price
+      </p>
+      {flights.map((f, i) => (
+        <FlightCard key={f.offerId || i} flight={f} onSelect={onSelect} done={done} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Flight Guest Form ───────────────────────────────── */
+function FlightPassengerForm({ onSubmit, done }) {
+  const [title,    setTitle]    = useState('mr');
+  const [firstName, setFirst]  = useState('');
+  const [lastName,  setLast]   = useState('');
+  const [dob,       setDob]    = useState('');
+  const [gender,    setGender] = useState('m');
+  const [email,     setEmail]  = useState('');
+  const [phone,     setPhone]  = useState('');
+
+  const valid = firstName.trim() && lastName.trim() && dob && email.trim() && phone.trim();
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    onSubmit({ title, firstName: firstName.trim(), lastName: lastName.trim(), dob, gender, email: email.trim(), phone: phone.trim() });
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Passenger details submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handleSubmit} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 360,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Passenger Details
+      </p>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, width: 90 }}>
+          <span style={labelTextStyle}>Title</span>
+          <select value={title} onChange={e => { setTitle(e.target.value); setGender(['ms', 'mrs', 'miss'].includes(e.target.value) ? 'f' : 'm'); }}
+            style={{ ...fieldStyle, cursor: 'pointer', padding: '9px 8px' }}>
+            <option value="mr">Mr</option>
+            <option value="mrs">Mrs</option>
+            <option value="ms">Ms</option>
+            <option value="miss">Miss</option>
+          </select>
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>First Name</span>
+          <input type="text" value={firstName} required placeholder="Rahul" onChange={e => setFirst(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Last Name</span>
+          <input type="text" value={lastName} required placeholder="Sharma" onChange={e => setLast(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Date of Birth</span>
+          <input type="date" value={dob} required max={new Date().toISOString().split('T')[0]} onChange={e => setDob(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, width: 110 }}>
+          <span style={labelTextStyle}>Gender</span>
+          <select value={gender} onChange={e => setGender(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+            <option value="m">Male</option>
+            <option value="f">Female</option>
+          </select>
+        </label>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Email Address</span>
+        <input type="email" value={email} required placeholder="rahul@example.com" onChange={e => setEmail(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <label style={{ ...labelStyle, marginBottom: 18 }}>
+        <span style={labelTextStyle}>Phone Number (with country code)</span>
+        <input type="tel" value={phone} required placeholder="+919834725737" onChange={e => setPhone(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <button type="submit" disabled={!valid} style={{
+        width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+        background: valid ? '#000' : '#d9d9d9', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
+      }}>
+        Confirm Passenger
+      </button>
+    </form>
+  );
+}
+
+/* ── Flight Payment Gate ─────────────────────────────── */
+function parseFlightPaymentToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[FLIGHT_PAYMENT_GATE:')) return null;
+  try { return JSON.parse(t.slice('[FLIGHT_PAYMENT_GATE:'.length, -1)); } catch { return null; }
+}
+
+function parseFlightBookingConfirmedToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[FLIGHT_BOOKING_CONFIRMED:')) return null;
+  try { return JSON.parse(t.slice('[FLIGHT_BOOKING_CONFIRMED:'.length, -1)); } catch { return null; }
+}
+
+function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
+  const [cardNum, setCardNum] = useState('');
+  const [expiry,  setExpiry]  = useState('');
+  const [cvv,     setCvv]     = useState('');
+  const [paying,  setPaying]  = useState(false);
+  const [error,   setError]   = useState('');
+
+  const cardClean = cardNum.replace(/\s/g, '');
+  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Payment complete
+      </div>
+    );
+  }
+
+  function fmtCard(val)   { return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); }
+  function fmtExpiry(val) { const d = val.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; }
+
+  async function handlePay(e) {
+    e.preventDefault();
+    if (!valid || paying) return;
+    setPaying(true);
+    setError('');
+    try {
+      const res = await fetch('/api/flights/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          offerId:      data.offerId,
+          passengerIds: data.passengerIds,
+          guest:        flightGuestRef.current,
+        }),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Booking failed'); }
+      onComplete(await res.json());
+    } catch (err) {
+      setError(err.message || 'Booking failed. Please try again.');
+      setPaying(false);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    letterSpacing: '0.05em', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handlePay} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#666' }}>{data.airline} · {data.route}</p>
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#aaa' }}>{data.departureDate}</p>
+
+      <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, color: '#666' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#0d0d0d' }}>
+          {data.currency} {Number(data.amount).toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Card Number</span>
+        <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
+          onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Expiry</span>
+          <input type="text" value={expiry} placeholder="MM/YY"
+            onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>CVV</span>
+          <input type="text" value={cvv} placeholder="123" maxLength={4}
+            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
+            style={{ ...inputStyle, letterSpacing: '0.2em' }}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      {error && <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
+
+      <button type="submit" disabled={!valid || paying} style={{
+        width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
+        background: (!valid || paying) ? '#d9d9d9' : '#000', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+      }}>
+        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+      </button>
+    </form>
+  );
+}
+
+/* ── Flight Booking Confirmed ────────────────────────── */
+function FlightBookingConfirmed({ data }) {
+  const row = (label, value) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e5e5' }}>
+      <span style={{ fontSize: 13, color: '#666' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#0d0d0d', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%', background: '#dcfce7',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#166534' }}>Flight Booked!</span>
+      </div>
+      {row('Reference',    data.reference    || '—')}
+      {row('Airline',      data.airline      || '—')}
+      {row('Route',        `${data.origin} → ${data.destination}` || '—')}
+      {row('Passenger',    data.passengerName || '—')}
+      {row('Departure',    data.departureAt   || '—')}
+      {row('Arrival',      data.arrivalAt     || '—')}
+      {row('Total paid',   `${data.currency} ${Number(data.total).toLocaleString('en-IN')}`)}
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════ */
 /*  Main ChatUI                                          */
 /* ══════════════════════════════════════════════════════ */
@@ -1281,7 +1858,8 @@ export default function ChatUI({ user }) {
   const scrollRef       = useRef(null);
   const taRef           = useRef(null);
   const activeIdRef     = useRef(null);
-  const pendingGuestRef = useRef(null);
+  const pendingGuestRef       = useRef(null);
+  const pendingFlightGuestRef = useRef(null);
   const scrollInstant   = useRef(false);
   const loadingConv     = useRef(false); // true when opening a past chat — skip timestamp update
 
@@ -1499,6 +2077,56 @@ export default function ChatUI({ user }) {
     setMessages(prev => [...prev, { role: 'assistant', content: `[BOOKING_CONFIRMED:${confirmed}]` }]);
   }
 
+  /* ── Flight search form: done when a user message exists after the last form ── */
+  const lastFlightSearchIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && FLIGHT_SEARCH_FORM_RE.test(m.content.trim()) ? i : acc, -1);
+  const flightSearchDone = lastFlightSearchIdx !== -1 && messages.slice(lastFlightSearchIdx + 1).some(m => m.role === 'user');
+
+  function handleFlightSearchSubmit(from, to, departure, returnDate, passengers, cabin) {
+    const ret = returnDate ? `\nReturn: ${returnDate}` : '';
+    send(`From: ${from}\nTo: ${to}\nDeparture: ${departure}${ret}\nPassengers: ${passengers}\nCabin: ${cabin}`);
+  }
+
+  /* ── Flight list: done when a user message exists after the last flight list ── */
+  const lastFlightListIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[FLIGHT_LIST:') ? i : acc, -1);
+  const flightListDone = lastFlightListIdx !== -1 && messages.slice(lastFlightListIdx + 1).some(m => m.role === 'user');
+
+  function handleFlightSelect(flight) {
+    send(`I'd like to book ${flight.airline} ${flight.origin}-${flight.destination} (offerId: ${flight.offerId}, passengerIds: ${JSON.stringify(flight.passengerIds)})`);
+  }
+
+  /* ── Flight guest form: done when a user message exists after the last form ── */
+  const lastFlightGuestIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim() === '[FLIGHT_GUEST_FORM]' ? i : acc, -1);
+  const flightGuestDone = lastFlightGuestIdx !== -1 && messages.slice(lastFlightGuestIdx + 1).some(m => m.role === 'user');
+
+  function handleFlightGuestSubmit(guestInfo) {
+    pendingFlightGuestRef.current = guestInfo;
+    send(`Title: ${guestInfo.title}\nFirst Name: ${guestInfo.firstName}\nLast Name: ${guestInfo.lastName}\nDate of Birth: ${guestInfo.dob}\nGender: ${guestInfo.gender === 'f' ? 'female' : 'male'}\nEmail: ${guestInfo.email}\nPhone: ${guestInfo.phone}`);
+  }
+
+  /* ── Flight payment gate: done when a FLIGHT_BOOKING_CONFIRMED message exists after it ── */
+  const lastFlightPaymentIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[FLIGHT_PAYMENT_GATE:') ? i : acc, -1);
+  const flightPaymentDone = lastFlightPaymentIdx !== -1 &&
+    messages.slice(lastFlightPaymentIdx + 1).some(m => m.content.trim().startsWith('[FLIGHT_BOOKING_CONFIRMED:'));
+
+  function handleFlightPaymentComplete(booking) {
+    const confirmed = JSON.stringify({
+      reference:     booking.bookingReference,
+      airline:       booking.airline,
+      origin:        booking.origin,
+      destination:   booking.destination,
+      passengerName: booking.passengerName,
+      departureAt:   booking.departureAt,
+      arrivalAt:     booking.arrivalAt,
+      total:         booking.totalAmount,
+      currency:      booking.currency,
+    });
+    setMessages(prev => [...prev, { role: 'assistant', content: `[FLIGHT_BOOKING_CONFIRMED:${confirmed}]` }]);
+  }
+
   const empty  = messages.length === 0;
 
   /* ── Sidebar widths ── */
@@ -1656,11 +2284,41 @@ export default function ChatUI({ user }) {
               marginBottom: 16, fontSize: 20, fontWeight: 700, color: '#fff',
             }}>P</div>
             <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
-              How can I help you?
+              What would you like to book?
             </h1>
-            <p style={{ color: '#999', fontSize: 14, margin: '8px 0 28px' }}>
-              Search and book hotels worldwide.
+            <p style={{ color: '#999', fontSize: 14, margin: '8px 0 24px' }}>
+              Hotels and flights worldwide — pick a service or just type.
             </p>
+
+            {/* Service selection chips */}
+            <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {[
+                {
+                  label: 'Book a Hotel',
+                  sub: 'Search & reserve rooms',
+                  icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
+                    </svg>
+                  ),
+                  msg: 'I want to book a hotel',
+                },
+                {
+                  label: 'Book a Flight',
+                  sub: 'Search & reserve seats',
+                  icon: (
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.1z" />
+                    </svg>
+                  ),
+                  msg: 'I want to book a flight',
+                },
+              ].map(({ label, sub, icon, msg }) => (
+                <ServiceChip key={label} label={label} sub={sub} icon={icon} onClick={() => send(msg)} />
+              ))}
+            </div>
+
             <div style={{
               width: '100%', maxWidth: 640, background: '#fff',
               borderRadius: 24, padding: '10px 10px 10px 18px',
@@ -1704,6 +2362,15 @@ export default function ChatUI({ user }) {
                       onPaymentComplete={handlePaymentComplete}
                       paymentGateDone={paymentGateDone}
                       guestRef={pendingGuestRef}
+                      onFlightSearchSubmit={handleFlightSearchSubmit}
+                      flightSearchDone={flightSearchDone}
+                      onFlightSelect={handleFlightSelect}
+                      flightListDone={flightListDone}
+                      onFlightGuestSubmit={handleFlightGuestSubmit}
+                      flightGuestDone={flightGuestDone}
+                      onFlightPaymentComplete={handleFlightPaymentComplete}
+                      flightPaymentDone={flightPaymentDone}
+                      flightGuestRef={pendingFlightGuestRef}
                     />
                   </React.Fragment>
                 ))}
