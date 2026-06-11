@@ -66,7 +66,7 @@ export async function searchHotels(destinationCode, checkIn, checkOut, adults = 
         const res = await fetch(`${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`, { headers: getHeaders() });
         if (res.ok) {
           (await res.json()).hotels?.forEach(h => {
-            map[String(h.code)] = (h.facilities || []).slice(0, 5).map(f => f.facilityName?.content).filter(Boolean);
+            map[String(h.code)] = (h.facilities || []).slice(0, 8).map(f => f.facilityName?.content).filter(Boolean);
           });
         }
       } catch {}
@@ -251,4 +251,42 @@ export async function createBooking({ rateKey, holderName, holderSurname, email,
     holderName: `${booking?.holder?.name} ${booking?.holder?.surname}`,
     cancellationPolicies: booking?.hotel?.rooms?.[0]?.rates?.[0]?.cancellationPolicies,
   };
+}
+
+/* Fetch up to 5 photos for each hotel code in the comma-separated list.
+   Returns { "12345": ["url1","url2",...], "67890": [...], ... } */
+export async function getHotelImages(codes) {
+  const map = {};
+  try {
+    const codeList = codes.split(',').map(c => c.trim()).filter(Boolean);
+    const qs = new URLSearchParams({
+      codes,
+      fields: 'images',
+      language: 'ENG',
+      from: '1',
+      to: String(codeList.length),
+    });
+    const res = await fetch(`${BASE_URL}/hotel-content-api/1.0/hotels?${qs}`, { headers: getHeaders() });
+    if (!res.ok) return map;
+
+    const data = await res.json();
+    (data.hotels || []).forEach(h => {
+      const images = h.images || [];
+      const sorted = [...images].sort((a, b) => {
+        if (a.imageTypeCode === 'GEN' && b.imageTypeCode !== 'GEN') return -1;
+        if (b.imageTypeCode === 'GEN' && a.imageTypeCode !== 'GEN') return 1;
+        return (a.visualOrder || 99) - (b.visualOrder || 99);
+      });
+      const seen = new Set();
+      const urls = [];
+      for (const img of sorted) {
+        if (!img.path || seen.has(img.path)) continue;
+        seen.add(img.path);
+        urls.push(`https://photos.hotelbeds.com/giata/bigger/${img.path}`);
+        if (urls.length === 5) break;
+      }
+      map[String(h.code)] = urls;
+    });
+  } catch {}
+  return map;
 }

@@ -50,7 +50,7 @@ Once you have destination + check-in + check-out, call search_destinations to ge
 
 STEP 3 — SHOW RESULTS AS CARDS
 After receiving the search_hotels tool result, output EXACTLY this token and nothing else — no text before or after it in any language:
-[HOTEL_LIST:{"hotels":[{"code":"...","name":"...","categoryName":"...","minRate":...,"currency":"...","rateKey":"..."},...]}]
+[HOTEL_LIST:{"hotels":[{"code":"...","name":"...","categoryName":"...","minRate":...,"currency":"...","rateKey":"...","facilities":["..."]},...]}]
 
 Copy the values directly from the tool result. Do NOT describe hotels in prose. Do NOT output any other text.
 The system will render clickable hotel cards. After the user selects one, their message will look like:

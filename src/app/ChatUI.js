@@ -321,7 +321,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
-        <HotelList hotels={hotelListData.hotels || []} onSelect={onHotelSelect} done={hotelListDone} />
+        <HotelList hotels={hotelListData.hotels || []} onSelect={onHotelSelect} done={hotelListDone} isMobile={isMobile} />
       </div>
     );
   }
@@ -379,50 +379,185 @@ function parseHotelListToken(content) {
   try { return JSON.parse(t.slice('[HOTEL_LIST:'.length, -1)); } catch { return null; }
 }
 
-function HotelCard({ hotel, onSelect }) {
+/* ── Photo carousel ──────────────────────────────────── */
+function PhotoCarousel({ urls, name }) {
+  const [idx, setIdx]       = useState(0);
+  const [errors, setErrors] = useState({});
+  const touchStartX         = useRef(null);
+
+  const valid      = urls.filter((_, i) => !errors[i]);
+  const clampedIdx = Math.min(idx, Math.max(valid.length - 1, 0));
+
+  function prev(e) { e.stopPropagation(); setIdx(i => (i - 1 + valid.length) % valid.length); }
+  function next(e) { e.stopPropagation(); setIdx(i => (i + 1) % valid.length); }
+
+  function onTouchStart(e) { touchStartX.current = e.touches[0].clientX; }
+  function onTouchEnd(e) {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) diff > 0 ? setIdx(i => (i + 1) % valid.length) : setIdx(i => (i - 1 + valid.length) % valid.length);
+    touchStartX.current = null;
+  }
+
+  if (valid.length === 0) {
+    return (
+      <div style={{
+        width: '100%', height: 110, background: '#f4f4f4',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth={1.5}>
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+      style={{ position: 'relative', width: '100%', height: 160, background: '#f0f0f0', overflow: 'hidden' }}
+    >
+      <img
+        key={valid[clampedIdx]}
+        src={valid[clampedIdx]}
+        alt={name}
+        onError={() => {
+          const realIdx = urls.indexOf(valid[clampedIdx]);
+          setErrors(p => ({ ...p, [realIdx]: true }));
+        }}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+
+      {valid.length > 1 && (
+        <>
+          {/* Left arrow — 44px touch target */}
+          <button onClick={prev} style={{
+            position: 'absolute', left: 0, top: 0, bottom: 0, width: 44,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-start', paddingLeft: 6,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.45)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </div>
+          </button>
+
+          {/* Right arrow */}
+          <button onClick={next} style={{
+            position: 'absolute', right: 0, top: 0, bottom: 0, width: 44,
+            background: 'none', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
+          }}>
+            <div style={{
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.45)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+
+          {/* Dots */}
+          <div style={{
+            position: 'absolute', bottom: 7, left: 0, right: 0,
+            display: 'flex', justifyContent: 'center', gap: 5, pointerEvents: 'none',
+          }}>
+            {valid.map((_, i) => (
+              <div key={i} style={{
+                width: i === clampedIdx ? 14 : 6, height: 6, borderRadius: 3,
+                background: i === clampedIdx ? '#fff' : 'rgba(255,255,255,0.5)',
+                transition: 'width 0.2s',
+              }} />
+            ))}
+          </div>
+
+          {/* Count badge */}
+          <div style={{
+            position: 'absolute', top: 8, right: 8,
+            background: 'rgba(0,0,0,0.5)', borderRadius: 6,
+            padding: '2px 7px', fontSize: 11, color: '#fff', pointerEvents: 'none',
+          }}>
+            {clampedIdx + 1}/{valid.length}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── Hotel card ──────────────────────────────────────── */
+function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
   const fmt = n => Number(n).toLocaleString('en-IN');
   return (
     <button
       onClick={() => onSelect(hotel)}
       style={{
         background: '#fff', border: '1px solid #e5e5e5',
-        borderRadius: 12, padding: '14px 16px', marginBottom: 8,
+        borderRadius: 14, marginBottom: 10,
         cursor: 'pointer', textAlign: 'left', width: '100%',
         boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+        overflow: 'hidden', padding: 0,
         transition: 'border-color 0.15s, box-shadow 0.15s',
+        WebkitTapHighlightColor: 'transparent',
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = '#999'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)'; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)'; }}
+      onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.borderColor = '#aaa'; e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.11)'; }}}
+      onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.borderColor = '#e5e5e5'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.06)'; }}}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: hotel.facilities?.length ? 8 : 0 }}>
-        <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: '#0d0d0d' }}>{hotel.name}</div>
-          {hotel.categoryName && (
-            <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{hotel.categoryName}</div>
-          )}
-        </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, color: '#0d0d0d' }}>
-            {hotel.currency} {fmt(hotel.minRate)}
+      <PhotoCarousel urls={imageUrls} name={hotel.name} />
+
+      <div style={{ padding: isMobile ? '10px 12px' : '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#0d0d0d', lineHeight: 1.3 }}>{hotel.name}</div>
+            {hotel.categoryName && (
+              <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{hotel.categoryName}</div>
+            )}
           </div>
-          <div style={{ fontSize: 11, color: '#999' }}>per night</div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: '#0d0d0d' }}>
+              {hotel.currency} {fmt(hotel.minRate)}
+            </div>
+            <div style={{ fontSize: 11, color: '#999' }}>per night</div>
+          </div>
         </div>
+
+        {hotel.facilities?.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            {hotel.facilities.map((f, i) => (
+              <span key={i} style={{
+                fontSize: 11, color: '#555', background: '#f4f4f4',
+                borderRadius: 6, padding: '3px 7px',
+              }}>{f}</span>
+            ))}
+          </div>
+        )}
       </div>
-      {hotel.facilities?.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-          {hotel.facilities.map((f, i) => (
-            <span key={i} style={{
-              fontSize: 11, color: '#555', background: '#f4f4f4',
-              borderRadius: 6, padding: '2px 8px',
-            }}>{f}</span>
-          ))}
-        </div>
-      )}
     </button>
   );
 }
 
-function HotelList({ hotels, onSelect, done }) {
+function HotelList({ hotels, onSelect, done, isMobile }) {
+  const [imageMap, setImageMap] = useState({});
+
+  useEffect(() => {
+    if (!hotels.length) return;
+    const codes = hotels.map(h => h.code).join(',');
+    fetch(`/api/hotels/images?codes=${codes}`)
+      .then(r => r.json())
+      .then(data => setImageMap(data))
+      .catch(() => {});
+  }, [hotels]);
+
   if (done) {
     return (
       <div style={{
@@ -459,7 +594,7 @@ function HotelList({ hotels, onSelect, done }) {
   );
 
   return (
-    <div style={{ width: '100%', maxWidth: 460 }}>
+    <div style={{ width: '100%', maxWidth: isMobile ? '100%' : 520 }}>
       <p style={{ margin: '0 0 14px', fontSize: 15, color: '#0d0d0d' }}>
         Here are the available hotels. Tap one to select:
       </p>
@@ -471,7 +606,7 @@ function HotelList({ hotels, onSelect, done }) {
             low={affordable[0].minRate}
             high={affordable[affordable.length - 1].minRate}
           />
-          {affordable.map(h => <HotelCard key={h.code} hotel={h} onSelect={onSelect} />)}
+          {affordable.map(h => <HotelCard key={h.code} hotel={h} imageUrls={imageMap[String(h.code)] || []} onSelect={onSelect} isMobile={isMobile} />)}
         </div>
       )}
 
@@ -482,7 +617,7 @@ function HotelList({ hotels, onSelect, done }) {
             low={premium[0].minRate}
             high={premium[premium.length - 1].minRate}
           />
-          {premium.map(h => <HotelCard key={h.code} hotel={h} onSelect={onSelect} />)}
+          {premium.map(h => <HotelCard key={h.code} hotel={h} imageUrls={imageMap[String(h.code)] || []} onSelect={onSelect} isMobile={isMobile} />)}
         </div>
       )}
     </div>
@@ -1262,9 +1397,9 @@ export default function ChatUI({ user }) {
               </button>
             )}
 
-            {/* Pargo AI brand — shown when desktop sidebar is collapsed */}
-            {!isMobile && !sidebarOpen && (
-              <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', paddingLeft: 4 }}>
+            {/* Pargo AI brand */}
+            {(isMobile || !sidebarOpen) && (
+              <span style={{ fontSize: 15, fontWeight: 600, color: '#0d0d0d', paddingLeft: isMobile ? 2 : 4 }}>
                 Pargo AI
               </span>
             )}
