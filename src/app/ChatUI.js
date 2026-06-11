@@ -97,7 +97,12 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
   function openMenu(e) {
     e.stopPropagation();
     const rect = btnRef.current.getBoundingClientRect();
-    setMenuPos({ top: rect.bottom + 2, right: window.innerWidth - rect.right });
+    const menuW = 160;
+    // Align right edge of menu with button's right edge, then clamp to viewport
+    let left = rect.right - menuW;
+    if (left < 6) left = 6;
+    if (left + menuW > window.innerWidth - 6) left = window.innerWidth - menuW - 6;
+    setMenuPos({ top: rect.bottom + 2, left });
     setMenuOpen(v => !v);
   }
 
@@ -184,7 +189,7 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
               style={{
                 position: 'fixed',
                 top: menuPos.top,
-                right: menuPos.right,
+                left: menuPos.left,
                 zIndex: 9999,
                 background: '#fff',
                 border: '1px solid #e8e8e8',
@@ -491,7 +496,7 @@ function Thinking({ isMobile }) {
 }
 
 /* ── Service chip (empty-state CTA) ─────────────────── */
-function ServiceChip({ label, sub, icon, onClick }) {
+function ServiceChip({ label, sub, icon, onClick, isMobile }) {
   const [hov, setHov] = useState(false);
   return (
     <button
@@ -500,14 +505,16 @@ function ServiceChip({ label, sub, icon, onClick }) {
       onMouseLeave={() => setHov(false)}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
-        padding: '14px 20px', borderRadius: 14, border: '1px solid',
+        padding: isMobile ? '14px 18px' : '14px 20px',
+        borderRadius: 14, border: '1px solid',
         borderColor: hov ? '#000' : '#e5e5e5',
         background: hov ? '#000' : '#fff',
         color: hov ? '#fff' : '#0d0d0d',
         cursor: 'pointer', textAlign: 'left',
         boxShadow: hov ? '0 4px 14px rgba(0,0,0,0.12)' : '0 1px 4px rgba(0,0,0,0.05)',
         transition: 'all 0.15s ease',
-        minWidth: 180,
+        width: isMobile ? '100%' : 'auto',
+        minWidth: isMobile ? 0 : 180,
       }}
     >
       <span style={{ flexShrink: 0, opacity: hov ? 1 : 0.7 }}>{icon}</span>
@@ -2291,7 +2298,13 @@ export default function ChatUI({ user }) {
             </p>
 
             {/* Service selection chips */}
-            <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{
+              display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: 12, marginBottom: 28,
+              width: isMobile ? '100%' : 'auto',
+              maxWidth: isMobile ? 360 : 'none',
+            }}>
               {[
                 {
                   label: 'Book a Hotel',
@@ -2315,7 +2328,7 @@ export default function ChatUI({ user }) {
                   msg: 'I want to book a flight',
                 },
               ].map(({ label, sub, icon, msg }) => (
-                <ServiceChip key={label} label={label} sub={sub} icon={icon} onClick={() => send(msg)} />
+                <ServiceChip key={label} label={label} sub={sub} icon={icon} isMobile={isMobile} onClick={() => send(msg)} />
               ))}
             </div>
 
