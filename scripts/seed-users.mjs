@@ -6,7 +6,6 @@ import bcrypt from 'bcryptjs'
 const USERS = [
   { name: 'Admin',      email: 'admin@pargoai.com',  password: 'admin123!' },
   { name: 'Demo Staff', email: 'staff@pargoai.com',  password: 'staff456!' },
-  { name: 'Parteek',    email: 'parteek@pargoai.com', password: 'parteek123' },
 ]
 
 async function seed() {

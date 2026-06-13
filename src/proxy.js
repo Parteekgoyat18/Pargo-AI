@@ -15,11 +15,15 @@ async function decrypt(token) {
 export async function proxy(request) {
   const { pathname } = request.nextUrl
   const isPublic = pathname === '/login'
+  const isApi = pathname.startsWith('/api/')
 
   const token = request.cookies.get('session')?.value
   const session = token ? await decrypt(token) : null
 
   if (!isPublic && !session?.userId) {
+    if (isApi) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     return NextResponse.redirect(new URL('/login', request.url))
   }
 

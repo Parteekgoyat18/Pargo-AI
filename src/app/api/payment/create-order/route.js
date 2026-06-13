@@ -1,4 +1,9 @@
+import { getSession } from '@/app/lib/session';
+
 export async function POST(request) {
+  const session = await getSession();
+  if (!session?.userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
   const { amount, currency } = await request.json();
 
   const keyId     = process.env.RAZORPAY_KEY_ID;

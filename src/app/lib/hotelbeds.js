@@ -140,6 +140,11 @@ export async function getHotelDetails(hotelCode) {
 const COUNTRY_HINTS = {
   india: 'IN', mumbai: 'IN', delhi: 'IN', bangalore: 'IN', bengaluru: 'IN',
   goa: 'IN', chennai: 'IN', kolkata: 'IN', hyderabad: 'IN', jaipur: 'IN',
+  kerala: 'IN', kochi: 'IN', cochin: 'IN', thiruvananthapuram: 'IN',
+  munnar: 'IN', alleppey: 'IN', alappuzha: 'IN', kozhikode: 'IN', calicut: 'IN',
+  agra: 'IN', varanasi: 'IN', udaipur: 'IN', amritsar: 'IN', shimla: 'IN',
+  manali: 'IN', darjeeling: 'IN', rishikesh: 'IN', dehradun: 'IN', pune: 'IN',
+  ahmedabad: 'IN', surat: 'IN', chandigarh: 'IN',
   usa: 'US', 'new york': 'US', 'los angeles': 'US', chicago: 'US',
   uk: 'GB', london: 'GB', manchester: 'GB',
   france: 'FR', paris: 'FR',
@@ -148,10 +153,44 @@ const COUNTRY_HINTS = {
   uae: 'AE', dubai: 'AE',
 };
 
+// Levenshtein edit distance — used for typo-tolerant matching
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+// Returns true if every word in query fuzzy-matches a word in target
+function fuzzyContains(target, query) {
+  if (target.includes(query)) return true;
+  const targetWords = target.split(/\s+/);
+  const queryWords = query.split(/\s+/);
+  return queryWords.every(qw =>
+    targetWords.some(tw => {
+      const threshold = qw.length <= 4 ? 1 : 2;
+      return editDistance(qw, tw) <= threshold;
+    })
+  );
+}
+
 function guessCountryCode(query) {
-  const q = query.toLowerCase();
+  const q = query.toLowerCase().trim();
+  // Exact/substring match first
   for (const [keyword, code] of Object.entries(COUNTRY_HINTS)) {
     if (q.includes(keyword)) return code;
+  }
+  // Fuzzy match for typos (e.g. "kerla" → "kerala")
+  for (const [keyword, code] of Object.entries(COUNTRY_HINTS)) {
+    const threshold = keyword.length <= 4 ? 1 : 2;
+    if (editDistance(q, keyword) <= threshold) return code;
   }
   return null;
 }
@@ -197,16 +236,21 @@ function destName(d) {
 
 function filterDestinations(list, query) {
   const q = query.toLowerCase();
-  // Strip "airport" / "near" noise words for matching
   const stripped = q.replace(/\b(airport|near|hotels?|in)\b/g, '').trim();
-  return list
-    .filter(d => {
-      const name = destName(d).toLowerCase();
-      const iso = typeof d.isoCode === 'string' ? d.isoCode.toLowerCase() : '';
-      return name.includes(stripped) || name.includes(q) || iso.includes(stripped);
-    })
-    .slice(0, 5)
-    .map(d => ({ code: d.code, name: destName(d), countryCode: d.countryCode }));
+
+  const toResult = d => ({ code: d.code, name: destName(d), countryCode: d.countryCode });
+
+  // First pass: exact substring match
+  const exact = list.filter(d => {
+    const name = destName(d).toLowerCase();
+    const iso = typeof d.isoCode === 'string' ? d.isoCode.toLowerCase() : '';
+    return name.includes(stripped) || name.includes(q) || iso.includes(stripped);
+  });
+  if (exact.length > 0) return exact.slice(0, 5).map(toResult);
+
+  // Second pass: fuzzy match (handles typos like "kerla" → "kerala")
+  const fuzzy = list.filter(d => fuzzyContains(destName(d).toLowerCase(), stripped));
+  return fuzzy.slice(0, 5).map(toResult);
 }
 
 export async function checkRate(rateKey) {

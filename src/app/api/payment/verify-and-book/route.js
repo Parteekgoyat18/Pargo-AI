@@ -1,7 +1,11 @@
 import crypto from 'crypto';
 import { createBooking } from '@/app/lib/hotelbeds';
+import { getSession } from '@/app/lib/session';
 
 export async function POST(request) {
+  const session = await getSession();
+  if (!session?.userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
   const {
     razorpay_payment_id,
     razorpay_order_id,

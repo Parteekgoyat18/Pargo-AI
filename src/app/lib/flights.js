@@ -78,7 +78,7 @@ const CITY_TO_IATA = {
   rome: 'FCO',
   barcelona: 'BCN',
   berlin: 'BER',
-  madrid: 'MXP',
+  madrid: 'MAD',
   zurich: 'ZRH',
   vienna: 'VIE',
   brussels: 'BRU',
@@ -152,11 +152,13 @@ export async function searchAirports(query) {
 
 function parseDuration(isoDuration) {
   if (!isoDuration) return '';
-  const h = (isoDuration.match(/(\d+)H/) || [])[1];
-  const m = (isoDuration.match(/(\d+)M/) || [])[1];
-  if (h && m) return `${h}h ${m}m`;
-  if (h) return `${h}h`;
-  if (m) return `${m}m`;
+  const d = parseInt((isoDuration.match(/(\d+)D/) || [])[1] || '0', 10);
+  const h = parseInt((isoDuration.match(/(\d+)H/) || [])[1] || '0', 10);
+  const m = parseInt((isoDuration.match(/(\d+)M/) || [])[1] || '0', 10);
+  const totalH = d * 24 + h;
+  if (totalH && m) return `${totalH}h ${m}m`;
+  if (totalH)      return `${totalH}h`;
+  if (m)           return `${m}m`;
   return '';
 }
 
@@ -169,8 +171,12 @@ function fmtDT(dt) {
 }
 
 export async function searchFlights(origin, destination, departureDate, returnDate, adults = 1, cabinClass = 'economy') {
-  const slices = [{ origin, destination, departure_date: departureDate }];
-  if (returnDate) slices.push({ origin: destination, destination: origin, departure_date: returnDate });
+  // Resolve city names to IATA codes in case the AI skips search_airports
+  const originCode = cityToIata(origin) || origin.toUpperCase();
+  const destCode   = cityToIata(destination) || destination.toUpperCase();
+
+  const slices = [{ origin: originCode, destination: destCode, departure_date: departureDate }];
+  if (returnDate) slices.push({ origin: destCode, destination: originCode, departure_date: returnDate });
 
   const passengers = Array.from({ length: Number(adults) || 1 }, () => ({ type: 'adult' }));
 
@@ -182,7 +188,7 @@ export async function searchFlights(origin, destination, departureDate, returnDa
     },
   };
 
-  console.log('[searchFlights] request:', JSON.stringify({ origin, destination, departureDate, returnDate, adults, cabinClass }));
+  console.log('[searchFlights] request:', JSON.stringify({ origin: originCode, destination: destCode, departureDate, returnDate, adults, cabinClass }));
 
   const res = await fetch(`${DUFFEL_BASE}/air/offer_requests`, {
     method: 'POST',
@@ -241,28 +247,192 @@ export async function searchFlights(origin, destination, departureDate, returnDa
   return { flights };
 }
 
-export async function createFlightOrder(offerId, passengerIds, guestInfo) {
-  // Fetch current offer to get live price and currency for payment
+const MONTH_MAP = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+
+function parseFriendlyDate(str) {
+  if (!str) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const parts = str.trim().split(' ');
+  if (parts.length === 2) {
+    const day   = parseInt(parts[0], 10);
+    const month = MONTH_MAP[parts[1]];
+    if (!isNaN(day) && month !== undefined) {
+      const today = new Date();
+      let year = today.getFullYear();
+      const candidate = new Date(year, month, day);
+      if (candidate < today) candidate.setFullYear(year + 1);
+      return candidate.toISOString().split('T')[0];
+    }
+  }
+  return null;
+}
+
+async function _refreshOfferFromMeta(flightMeta, guestInfo) {
+  const parts = (flightMeta?.route || '').split(' to ');
+  const origin      = parts[0]?.trim().toUpperCase();
+  const destination = parts[1]?.trim().toUpperCase();
+  const departDate  = parseFriendlyDate(flightMeta?.departureDate);
+  if (!origin || !destination || !departDate) return null;
+
+  const guestList      = Array.isArray(guestInfo) ? guestInfo : [guestInfo];
+  const passengerTypes = guestList.map(g => dobToPassengerType(g.dob));
+  const cabin          = flightMeta?.cabinClass || 'economy';
+
+  const reqRes = await fetch(`${DUFFEL_BASE}/air/offer_requests`, {
+    method:  'POST',
+    headers: duffelHeaders(),
+    body:    JSON.stringify({
+      data: {
+        slices:      [{ origin, destination, departure_date: departDate }],
+        passengers:  passengerTypes.map(type => ({ type })),
+        cabin_class: cabin,
+      },
+    }),
+  });
+  if (!reqRes.ok) return null;
+
+  const reqData = await reqRes.json();
+  const offers  = reqData.data?.offers || [];
+  if (offers.length === 0) return null;
+
+  const airlineName = (flightMeta?.airline || '').toLowerCase();
+  const best = offers.find(o => o.owner?.name?.toLowerCase() === airlineName)
+    || [...offers].sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount))[0];
+
+  return { offerId: best.id, passengerIds: best.passengers?.map(p => p.id) || [] };
+}
+
+async function _refreshOffer(expiredOffer) {
+  const slice = expiredOffer.slices?.[0];
+  if (!slice) return null;
+
+  const origin      = slice.origin?.iata_code;
+  const destination = slice.destination?.iata_code;
+  const departDate  = slice.segments?.[0]?.departing_at?.split('T')[0];
+  if (!origin || !destination || !departDate) return null;
+
+  const adults = (expiredOffer.passengers || []).filter(p => p.type === 'adult').length || 1;
+
+  // Derive cabin class from the marketing name in the first segment
+  const mktName  = slice.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name?.toLowerCase() || '';
+  const cabinMap = { 'premium economy': 'premium_economy', 'business': 'business', 'first': 'first' };
+  const cabin    = cabinMap[mktName] || 'economy';
+
+  const body = {
+    data: {
+      slices:      [{ origin, destination, departure_date: departDate }],
+      passengers:  Array.from({ length: adults }, () => ({ type: 'adult' })),
+      cabin_class: cabin,
+    },
+  };
+
+  const res = await fetch(`${DUFFEL_BASE}/air/offer_requests`, {
+    method: 'POST', headers: duffelHeaders(), body: JSON.stringify(body),
+  });
+  if (!res.ok) return null;
+
+  const data  = await res.json();
+  const offers = data.data?.offers || [];
+  if (offers.length === 0) return null;
+
+  const best = [...offers].sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount))[0];
+  return { offerId: best.id, passengerIds: best.passengers?.map(p => p.id) || [] };
+}
+
+function dobToPassengerType(dob) {
+  if (!dob) return 'adult';
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) age--;
+  if (age < 2) return 'infant_without_seat';
+  if (age < 18) return 'child';
+  return 'adult';
+}
+
+async function _createOfferWithTypes(offer, passengerTypes) {
+  const slice = offer.slices?.[0];
+  const origin      = slice?.origin?.iata_code;
+  const destination = slice?.destination?.iata_code;
+  const departDate  = slice?.segments?.[0]?.departing_at?.split('T')[0];
+  if (!origin || !destination || !departDate) return null;
+
+  const mktName  = slice?.segments?.[0]?.passengers?.[0]?.cabin_class_marketing_name?.toLowerCase() || '';
+  const cabinMap = { 'premium economy': 'premium_economy', business: 'business', first: 'first' };
+  const cabin    = cabinMap[mktName] || 'economy';
+
+  const reqRes = await fetch(`${DUFFEL_BASE}/air/offer_requests`, {
+    method: 'POST',
+    headers: duffelHeaders(),
+    body: JSON.stringify({
+      data: {
+        slices:      [{ origin, destination, departure_date: departDate }],
+        passengers:  passengerTypes.map(type => ({ type })),
+        cabin_class: cabin,
+      },
+    }),
+  });
+  if (!reqRes.ok) return null;
+
+  const reqData = await reqRes.json();
+  const offers  = reqData.data?.offers || [];
+  if (offers.length === 0) return null;
+
+  const origAirline = offer.owner?.iata_code;
+  const best = offers.find(o => o.owner?.iata_code === origAirline)
+    || [...offers].sort((a, b) => parseFloat(a.total_amount) - parseFloat(b.total_amount))[0];
+
+  return { offerId: best.id, passengerIds: best.passengers?.map(p => p.id) || [] };
+}
+
+// _depth: 0 = first attempt, 1 = after type fix, 2 = final retry (no more retries)
+export async function createFlightOrder(offerId, passengerIds, guestInfo, _depth = 0, flightMeta = null) {
   const offerRes = await fetch(`${DUFFEL_BASE}/air/offers/${offerId}`, { headers: duffelHeaders() });
-  if (!offerRes.ok) return { error: 'Could not retrieve flight offer. It may have expired.' };
+  if (!offerRes.ok) {
+    if (_depth < 2 && flightMeta) {
+      console.log('[createFlightOrder] offer fetch failed, refreshing from meta');
+      const refreshed = await _refreshOfferFromMeta(flightMeta, guestInfo);
+      if (refreshed) {
+        return createFlightOrder(refreshed.offerId, refreshed.passengerIds, guestInfo, _depth + 1, null);
+      }
+    }
+    return { error: 'Could not retrieve flight offer. It may have expired — please search again.' };
+  }
 
   const offerData = await offerRes.json();
   const offer = offerData.data;
 
-  const gender = guestInfo.gender || (
-    ['ms', 'mrs', 'miss'].includes((guestInfo.title || '').toLowerCase()) ? 'f' : 'm'
-  );
+  const guestList    = Array.isArray(guestInfo) ? guestInfo : [guestInfo];
+  const neededTypes  = guestList.map(g => dobToPassengerType(g.dob));
+  const offerTypes   = (offer.passengers || []).map(p => p.type);
+  const typesMismatch = neededTypes.some((t, i) => t !== (offerTypes[i] || 'adult'));
 
-  const passengers = passengerIds.map(id => ({
-    id,
-    title:       (guestInfo.title || 'mr').toLowerCase(),
-    gender,
-    given_name:  guestInfo.firstName,
-    family_name: guestInfo.lastName,
-    born_on:     guestInfo.dob,
-    email:       guestInfo.email,
-    phone_number: guestInfo.phone,
-  }));
+  // Re-create offer with correct passenger types (only on first attempt)
+  if (typesMismatch && _depth === 0) {
+    console.log('[createFlightOrder] passenger type mismatch, re-creating offer with types:', neededTypes);
+    const retyped = await _createOfferWithTypes(offer, neededTypes);
+    if (retyped) {
+      return createFlightOrder(retyped.offerId, retyped.passengerIds, guestInfo, 1, flightMeta);
+    }
+  }
+
+  const canonicalIds = offer.passengers?.map(p => p.id) || [...new Set(passengerIds)];
+
+  const passengers = canonicalIds.map((id, idx) => {
+    const g = guestList[idx] || guestList[0];
+    const gender = g.gender || (['ms', 'mrs', 'miss'].includes((g.title || '').toLowerCase()) ? 'f' : 'm');
+    return {
+      id,
+      title:        (g.title || 'mr').toLowerCase(),
+      gender,
+      given_name:   g.firstName,
+      family_name:  g.lastName,
+      born_on:      g.dob,
+      email:        g.email,
+      phone_number: g.phone,
+    };
+  });
 
   const body = {
     data: {
@@ -286,6 +456,19 @@ export async function createFlightOrder(offerId, passengerIds, guestInfo) {
   if (!res.ok) {
     const msg = data.errors?.[0]?.message || data.error?.message || `API error ${res.status}`;
     console.error('[createFlightOrder] error:', msg);
+
+    if (_depth < 2 && /offer|availability|select another/i.test(msg)) {
+      console.log('[createFlightOrder] availability error, refreshing offer (depth', _depth, '):', msg);
+      const refreshed = await _refreshOffer(offer);
+      if (refreshed) {
+        return createFlightOrder(refreshed.offerId, refreshed.passengerIds, guestInfo, _depth + 1, flightMeta);
+      }
+    }
+
+    if (/same name/i.test(msg)) {
+      return { error: 'We were unable to complete this booking. Please try selecting a different flight.' };
+    }
+
     return { error: msg };
   }
 
@@ -303,7 +486,7 @@ export async function createFlightOrder(offerId, passengerIds, guestInfo) {
     destination:      slice?.destination?.iata_code || '',
     departureAt:      firstSeg?.departing_at || '',
     arrivalAt:        lastSeg?.arriving_at || '',
-    passengerName:    `${guestInfo.firstName} ${guestInfo.lastName}`,
+    passengerName:    `${guestList[0].firstName} ${guestList[0].lastName}`,
     totalAmount:      amountInr,
     currency:         'INR',
   };

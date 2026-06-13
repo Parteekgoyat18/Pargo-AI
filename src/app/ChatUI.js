@@ -527,7 +527,7 @@ function ServiceChip({ label, sub, icon, onClick, isMobile }) {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, onFlightPaymentComplete, flightPaymentDone, flightGuestRef }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, flightPassengerCount, onFlightPaymentComplete, flightPaymentDone, flightGuestRef }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
@@ -560,14 +560,18 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       </div>
     );
   }
-  const sfMatch = content.trim().match(SEARCH_FORM_RE);
+  const sfMatch = content.match(SEARCH_FORM_RE);
   if (sfMatch) {
     let prefill = {};
     try { if (sfMatch[1]) prefill = JSON.parse(sfMatch[1]); } catch {}
+    const textBefore = content.slice(0, sfMatch.index).trim();
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
-        <SearchForm prefill={prefill} onSubmit={onSearchFormSubmit} done={searchFormDone} />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <SearchForm prefill={prefill} onSubmit={onSearchFormSubmit} done={searchFormDone} />
+        </div>
       </div>
     );
   }
@@ -589,23 +593,32 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       </div>
     );
   }
-  if (content.trim() === '[GUEST_DETAILS_FORM]') {
+  const guestFormTokenIdx = content.indexOf('[GUEST_DETAILS_FORM]');
+  if (guestFormTokenIdx !== -1) {
+    const textBefore = content.slice(0, guestFormTokenIdx).trim();
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
-        <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
+        </div>
       </div>
     );
   }
   // Flight tokens
-  const flightSearchMatch = content.trim().match(FLIGHT_SEARCH_FORM_RE);
+  const flightSearchMatch = content.match(FLIGHT_SEARCH_FORM_RE);
   if (flightSearchMatch) {
     let prefill = {};
     try { if (flightSearchMatch[1]) prefill = JSON.parse(flightSearchMatch[1]); } catch {}
+    const textBefore = content.slice(0, flightSearchMatch.index).trim();
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
-        <FlightSearchForm prefill={prefill} onSubmit={onFlightSearchSubmit} done={flightSearchDone} />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <FlightSearchForm prefill={prefill} onSubmit={onFlightSearchSubmit} done={flightSearchDone} />
+        </div>
       </div>
     );
   }
@@ -618,11 +631,16 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       </div>
     );
   }
-  if (content.trim() === '[FLIGHT_GUEST_FORM]') {
+  const flightGuestTokenIdx = content.indexOf('[FLIGHT_GUEST_FORM]');
+  if (flightGuestTokenIdx !== -1) {
+    const textBefore = content.slice(0, flightGuestTokenIdx).trim();
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
-        <FlightPassengerForm onSubmit={onFlightGuestSubmit} done={flightGuestDone} />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <FlightPassengerForm onSubmit={onFlightGuestSubmit} done={flightGuestDone} passengerCount={flightPassengerCount || 1} />
+        </div>
       </div>
     );
   }
@@ -782,8 +800,11 @@ function PhotoCarousel({ urls, name }) {
 function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
   const fmt = n => Number(n).toLocaleString('en-IN');
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(hotel)}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(hotel); }}
       style={{
         background: '#fff', border: '1px solid #e5e5e5',
         borderRadius: 14, marginBottom: 10,
@@ -825,7 +846,7 @@ function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -1102,7 +1123,8 @@ function BookingConfirmed({ data }) {
 }
 
 /* ── Search Form ─────────────────────────────────────── */
-const SEARCH_FORM_RE = /^\[SEARCH_FORM(?::(\{[\s\S]*\}))?\]$/;
+// Matches the token whether it appears alone or after a short error message
+const SEARCH_FORM_RE = /\[SEARCH_FORM(?::(\{[\s\S]*?\}))?\]/;
 
 function SearchForm({ prefill = {}, onSubmit, done }) {
   const today = new Date().toISOString().split('T')[0];
@@ -1354,7 +1376,7 @@ function GuestDetailsForm({ onSubmit, done }) {
 
 
 /* ── Flight Search Form ──────────────────────────────── */
-const FLIGHT_SEARCH_FORM_RE = /^\[FLIGHT_SEARCH_FORM(?::(\{[\s\S]*\}))?\]$/;
+const FLIGHT_SEARCH_FORM_RE = /\[FLIGHT_SEARCH_FORM(?::(\{[\s\S]*?\}))?\]/;
 
 function FlightSearchForm({ prefill = {}, onSubmit, done }) {
   const today = new Date().toISOString().split('T')[0];
@@ -1576,21 +1598,99 @@ function FlightList({ flights, onSelect, done }) {
 }
 
 /* ── Flight Guest Form ───────────────────────────────── */
-function FlightPassengerForm({ onSubmit, done }) {
-  const [title,    setTitle]    = useState('mr');
-  const [firstName, setFirst]  = useState('');
-  const [lastName,  setLast]   = useState('');
-  const [dob,       setDob]    = useState('');
-  const [gender,    setGender] = useState('m');
-  const [email,     setEmail]  = useState('');
-  const [phone,     setPhone]  = useState('');
+function PassengerSection({ index, total, data, onChange }) {
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+  const set = (field, val) => onChange(index, field, val);
 
-  const valid = firstName.trim() && lastName.trim() && dob && email.trim() && phone.trim();
+  return (
+    <div style={{
+      border: '1px solid #ebebeb', borderRadius: 12, padding: '16px',
+      marginBottom: total > 1 ? 16 : 0,
+    }}>
+      {total > 1 && (
+        <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 13, color: '#555', letterSpacing: '0.2px' }}>
+          Passenger {index + 1}
+        </p>
+      )}
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, width: 90 }}>
+          <span style={labelTextStyle}>Title</span>
+          <select value={data.title} onChange={e => { set('title', e.target.value); set('gender', ['ms', 'mrs', 'miss'].includes(e.target.value) ? 'f' : 'm'); }}
+            style={{ ...fieldStyle, cursor: 'pointer', padding: '9px 8px' }}>
+            <option value="mr">Mr</option>
+            <option value="mrs">Mrs</option>
+            <option value="ms">Ms</option>
+            <option value="miss">Miss</option>
+          </select>
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>First Name</span>
+          <input type="text" value={data.firstName} required placeholder="Rahul" onChange={e => set('firstName', e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Last Name</span>
+          <input type="text" value={data.lastName} required placeholder="Sharma" onChange={e => set('lastName', e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Date of Birth</span>
+          <input type="date" value={data.dob} required max={new Date().toISOString().split('T')[0]} onChange={e => set('dob', e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, width: 110 }}>
+          <span style={labelTextStyle}>Gender</span>
+          <select value={data.gender} onChange={e => set('gender', e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
+            <option value="m">Male</option>
+            <option value="f">Female</option>
+          </select>
+        </label>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Email Address</span>
+        <input type="email" value={data.email} required placeholder="rahul@example.com" onChange={e => set('email', e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <label style={{ ...labelStyle, marginBottom: 0 }}>
+        <span style={labelTextStyle}>Phone Number (with country code)</span>
+        <input type="tel" value={data.phone} required placeholder="+919834725737" onChange={e => set('phone', e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+    </div>
+  );
+}
+
+function emptyPassenger() {
+  return { title: 'mr', firstName: '', lastName: '', dob: '', gender: 'm', email: '', phone: '' };
+}
+
+function FlightPassengerForm({ onSubmit, done, passengerCount = 1 }) {
+  const [passengers, setPassengers] = useState(() =>
+    Array.from({ length: passengerCount }, emptyPassenger)
+  );
+
+  const valid = passengers.every(p => p.firstName.trim() && p.lastName.trim() && p.dob && p.email.trim() && p.phone.trim());
+
+  function handleChange(index, field, value) {
+    setPassengers(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p));
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!valid) return;
-    onSubmit({ title, firstName: firstName.trim(), lastName: lastName.trim(), dob, gender, email: email.trim(), phone: phone.trim() });
+    onSubmit(passengers.map(p => ({ ...p, firstName: p.firstName.trim(), lastName: p.lastName.trim(), email: p.email.trim(), phone: p.phone.trim() })));
   }
 
   if (done) {
@@ -1608,80 +1708,26 @@ function FlightPassengerForm({ onSubmit, done }) {
     );
   }
 
-  const fieldStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
-    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color 0.15s',
-  };
-  const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
-
   return (
     <form onSubmit={handleSubmit} style={{
       background: '#fff', border: '1px solid #e5e5e5',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 360,
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 400,
       boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
     }}>
       <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
         Passenger Details
       </p>
 
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, width: 90 }}>
-          <span style={labelTextStyle}>Title</span>
-          <select value={title} onChange={e => { setTitle(e.target.value); setGender(['ms', 'mrs', 'miss'].includes(e.target.value) ? 'f' : 'm'); }}
-            style={{ ...fieldStyle, cursor: 'pointer', padding: '9px 8px' }}>
-            <option value="mr">Mr</option>
-            <option value="mrs">Mrs</option>
-            <option value="ms">Ms</option>
-            <option value="miss">Miss</option>
-          </select>
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>First Name</span>
-          <input type="text" value={firstName} required placeholder="Rahul" onChange={e => setFirst(e.target.value)} style={fieldStyle}
-            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Last Name</span>
-          <input type="text" value={lastName} required placeholder="Sharma" onChange={e => setLast(e.target.value)} style={fieldStyle}
-            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
-        </label>
-      </div>
-
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Date of Birth</span>
-          <input type="date" value={dob} required max={new Date().toISOString().split('T')[0]} onChange={e => setDob(e.target.value)} style={fieldStyle}
-            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
-        </label>
-        <label style={{ ...labelStyle, width: 110 }}>
-          <span style={labelTextStyle}>Gender</span>
-          <select value={gender} onChange={e => setGender(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
-            <option value="m">Male</option>
-            <option value="f">Female</option>
-          </select>
-        </label>
-      </div>
-
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Email Address</span>
-        <input type="email" value={email} required placeholder="rahul@example.com" onChange={e => setEmail(e.target.value)} style={fieldStyle}
-          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
-      </label>
-
-      <label style={{ ...labelStyle, marginBottom: 18 }}>
-        <span style={labelTextStyle}>Phone Number (with country code)</span>
-        <input type="tel" value={phone} required placeholder="+919834725737" onChange={e => setPhone(e.target.value)} style={fieldStyle}
-          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
-      </label>
+      {passengers.map((p, i) => (
+        <PassengerSection key={i} index={i} total={passengerCount} data={p} onChange={handleChange} />
+      ))}
 
       <button type="submit" disabled={!valid} style={{
-        width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+        width: '100%', marginTop: 16, padding: '11px', borderRadius: 10, border: 'none',
         background: valid ? '#000' : '#d9d9d9', color: '#fff', fontSize: 14, fontWeight: 600,
         cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
       }}>
-        Confirm Passenger
+        {passengerCount > 1 ? `Confirm ${passengerCount} Passengers` : 'Confirm Passenger'}
       </button>
     </form>
   );
@@ -1734,13 +1780,22 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
     setPaying(true);
     setError('');
     try {
+      const guestList = Array.isArray(flightGuestRef.current)
+        ? flightGuestRef.current
+        : [flightGuestRef.current];
       const res = await fetch('/api/flights/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           offerId:      data.offerId,
           passengerIds: data.passengerIds,
-          guest:        flightGuestRef.current,
+          guests:       guestList,
+          flightMeta: {
+            route:         data.route,
+            departureDate: data.departureDate,
+            airline:       data.airline,
+            cabinClass:    data.cabinClass || 'economy',
+          },
         }),
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Booking failed'); }
@@ -2037,7 +2092,7 @@ export default function ChatUI({ user }) {
 
   /* ── Guest form: done when a user message exists after the last form marker ── */
   const lastFormIdx = messages.reduce((acc, m, i) =>
-    m.role === 'assistant' && m.content.trim() === '[GUEST_DETAILS_FORM]' ? i : acc, -1);
+    m.role === 'assistant' && m.content.includes('[GUEST_DETAILS_FORM]') ? i : acc, -1);
   const guestFormDone = lastFormIdx !== -1 && messages.slice(lastFormIdx + 1).some(m => m.role === 'user');
 
   function handleGuestFormSubmit(firstName, lastName, email, phone) {
@@ -2048,7 +2103,7 @@ export default function ChatUI({ user }) {
 
   /* ── Search form: done when a user message exists after the last search form marker ── */
   const lastSearchFormIdx = messages.reduce((acc, m, i) =>
-    m.role === 'assistant' && SEARCH_FORM_RE.test(m.content.trim()) ? i : acc, -1);
+    m.role === 'assistant' && SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
   const searchFormDone = lastSearchFormIdx !== -1 && messages.slice(lastSearchFormIdx + 1).some(m => m.role === 'user');
 
   function handleSearchFormSubmit(destination, checkin, checkout, adults) {
@@ -2086,7 +2141,7 @@ export default function ChatUI({ user }) {
 
   /* ── Flight search form: done when a user message exists after the last form ── */
   const lastFlightSearchIdx = messages.reduce((acc, m, i) =>
-    m.role === 'assistant' && FLIGHT_SEARCH_FORM_RE.test(m.content.trim()) ? i : acc, -1);
+    m.role === 'assistant' && FLIGHT_SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
   const flightSearchDone = lastFlightSearchIdx !== -1 && messages.slice(lastFlightSearchIdx + 1).some(m => m.role === 'user');
 
   function handleFlightSearchSubmit(from, to, departure, returnDate, passengers, cabin) {
@@ -2105,12 +2160,28 @@ export default function ChatUI({ user }) {
 
   /* ── Flight guest form: done when a user message exists after the last form ── */
   const lastFlightGuestIdx = messages.reduce((acc, m, i) =>
-    m.role === 'assistant' && m.content.trim() === '[FLIGHT_GUEST_FORM]' ? i : acc, -1);
+    m.role === 'assistant' && m.content.includes('[FLIGHT_GUEST_FORM]') ? i : acc, -1);
   const flightGuestDone = lastFlightGuestIdx !== -1 && messages.slice(lastFlightGuestIdx + 1).some(m => m.role === 'user');
 
-  function handleFlightGuestSubmit(guestInfo) {
-    pendingFlightGuestRef.current = guestInfo;
-    send(`Title: ${guestInfo.title}\nFirst Name: ${guestInfo.firstName}\nLast Name: ${guestInfo.lastName}\nDate of Birth: ${guestInfo.dob}\nGender: ${guestInfo.gender === 'f' ? 'female' : 'male'}\nEmail: ${guestInfo.email}\nPhone: ${guestInfo.phone}`);
+  /* Extract passenger count from the last flight search submission */
+  const flightPassengerCount = (() => {
+    const lastFSIdx = messages.reduce((acc, m, i) =>
+      m.role === 'assistant' && FLIGHT_SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
+    if (lastFSIdx === -1) return 1;
+    const sub = messages.slice(lastFSIdx + 1).find(m => m.role === 'user');
+    if (!sub) return 1;
+    const match = sub.content.match(/Passengers:\s*(\d+)/i);
+    return match ? Math.max(1, parseInt(match[1], 10)) : 1;
+  })();
+
+  function handleFlightGuestSubmit(passengers) {
+    pendingFlightGuestRef.current = passengers; // store full array
+    const msg = passengers.length === 1
+      ? `Title: ${passengers[0].title}\nFirst Name: ${passengers[0].firstName}\nLast Name: ${passengers[0].lastName}\nDate of Birth: ${passengers[0].dob}\nGender: ${passengers[0].gender === 'f' ? 'female' : 'male'}\nEmail: ${passengers[0].email}\nPhone: ${passengers[0].phone}`
+      : passengers.map((p, i) =>
+          `Passenger ${i + 1}:\nTitle: ${p.title}\nFirst Name: ${p.firstName}\nLast Name: ${p.lastName}\nDate of Birth: ${p.dob}\nGender: ${p.gender === 'f' ? 'female' : 'male'}\nEmail: ${p.email}\nPhone: ${p.phone}`
+        ).join('\n\n');
+    send(msg);
   }
 
   /* ── Flight payment gate: done when a FLIGHT_BOOKING_CONFIRMED message exists after it ── */
@@ -2381,6 +2452,7 @@ export default function ChatUI({ user }) {
                       flightListDone={flightListDone}
                       onFlightGuestSubmit={handleFlightGuestSubmit}
                       flightGuestDone={flightGuestDone}
+                      flightPassengerCount={flightPassengerCount}
                       onFlightPaymentComplete={handleFlightPaymentComplete}
                       flightPaymentDone={flightPaymentDone}
                       flightGuestRef={pendingFlightGuestRef}
