@@ -526,19 +526,60 @@ function ServiceChip({ label, sub, icon, onClick, isMobile }) {
   );
 }
 
+/* ── Service menu item (inside the Services dropdown) ── */
+function ServiceMenuItem({ label, sub, icon, onClick, isLast }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 14,
+        width: '100%', padding: '13px 18px',
+        background: hov ? '#f7f7f7' : '#fff',
+        border: 'none', borderBottom: isLast ? 'none' : '1px solid #f0f0f0',
+        cursor: 'pointer', textAlign: 'left',
+        transition: 'background 0.1s',
+      }}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+        background: hov ? '#000' : '#f4f4f4',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: hov ? '#fff' : '#555',
+        transition: 'background 0.15s, color 0.15s',
+      }}>
+        {icon}
+      </div>
+      <div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#0d0d0d' }}>{label}</div>
+        <div style={{ fontSize: 12, color: '#999', marginTop: 1 }}>{sub}</div>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hov ? '#000' : '#ccc'} strokeWidth={2.5}
+        style={{ marginLeft: 'auto', flexShrink: 0, transition: 'stroke 0.15s' }}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
+      </svg>
+    </button>
+  );
+}
+
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, flightPassengerCount, onFlightPaymentComplete, flightPaymentDone, flightGuestRef }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, flightPassengerCount, onFlightPaymentComplete, flightPaymentDone, flightGuestRef, onTransferSearchSubmit, transferSearchFormDone, onTransferSelect, transferListDone, onTransferGuestSubmit, transferGuestDone, onTransferPaymentComplete, transferPaymentDone, transferGuestRef }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
-    // Strip rateKey / offerId from selection messages before displaying
-    const hotelMatch  = content.match(/^I'd like to book (.+?) \(rateKey:/);
-    const flightMatch = content.match(/^I'd like to book (.+?) \(offerId:/);
+    // Strip rateKey / offerId / code from selection messages before displaying
+    const hotelMatch    = content.match(/^I'd like to book (.+?) \(rateKey:/);
+    const flightMatch   = content.match(/^I'd like to book (.+?) \(offerId:/);
+    const transferMatch = content.match(/^I'd like to book (.+?) \(rateKey:/);
     const display = hotelMatch
       ? `I'd like to book ${hotelMatch[1]}`
       : flightMatch
         ? `I'd like to book ${flightMatch[1]}`
-        : content;
+        : transferMatch
+          ? `I'd like to book ${transferMatch[1]}`
+          : content;
     return (
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
@@ -659,6 +700,71 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <FlightBookingConfirmed data={flightBookingData} />
+      </div>
+    );
+  }
+  // Transfer tokens
+  const transferSearchMatch = content.match(TRANSFER_SEARCH_FORM_RE);
+  if (transferSearchMatch) {
+    let prefill = {};
+    try { if (transferSearchMatch[1]) prefill = JSON.parse(transferSearchMatch[1]); } catch {}
+    const textBefore = content.slice(0, transferSearchMatch.index).trim();
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <TransferSearchForm prefill={prefill} onSubmit={onTransferSearchSubmit} done={transferSearchFormDone} />
+        </div>
+      </div>
+    );
+  }
+  const transferListData = parseTransferListToken(content);
+  if (transferListData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <TransferList
+          transfers={transferListData.transfers || []}
+          fromName={transferListData.fromName}
+          toName={transferListData.toName}
+          date={transferListData.date}
+          time={transferListData.time}
+          onSelect={onTransferSelect}
+          done={transferListDone}
+          isMobile={isMobile}
+        />
+      </div>
+    );
+  }
+  const transferGuestTokenIdx = content.indexOf('[TRANSFER_GUEST_FORM]');
+  if (transferGuestTokenIdx !== -1) {
+    const textBefore = content.slice(0, transferGuestTokenIdx).trim();
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <div style={{ flex: 1 }}>
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#444', fontSize: 14 }}>{textBefore}</p>}
+          <TransferGuestForm onSubmit={onTransferGuestSubmit} done={transferGuestDone} />
+        </div>
+      </div>
+    );
+  }
+  const transferPaymentData = parseTransferPaymentToken(content);
+  if (transferPaymentData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <TransferPaymentGate data={transferPaymentData} transferGuestRef={transferGuestRef} onComplete={onTransferPaymentComplete} done={transferPaymentDone} />
+      </div>
+    );
+  }
+  const transferBookingData = parseTransferBookingConfirmedToken(content);
+  if (transferBookingData) {
+    return (
+      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+        <GPTAvatar />
+        <TransferBookingConfirmed data={transferBookingData} />
       </div>
     );
   }
@@ -1904,24 +2010,615 @@ function FlightBookingConfirmed({ data }) {
   );
 }
 
+/* ── Transfers ───────────────────────────────────────── */
+const TRANSFER_SEARCH_FORM_RE = /\[TRANSFER_SEARCH_FORM(?::(\{[\s\S]*?\}))?\]/;
+
+function parseTransferListToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[TRANSFER_LIST:')) return null;
+  try { return JSON.parse(t.slice('[TRANSFER_LIST:'.length, -1)); } catch { return null; }
+}
+function parseTransferPaymentToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[TRANSFER_PAYMENT_GATE:')) return null;
+  try { return JSON.parse(t.slice('[TRANSFER_PAYMENT_GATE:'.length, -1)); } catch { return null; }
+}
+function parseTransferBookingConfirmedToken(content) {
+  const t = content.trim();
+  if (!t.startsWith('[TRANSFER_BOOKING_CONFIRMED:')) return null;
+  try { return JSON.parse(t.slice('[TRANSFER_BOOKING_CONFIRMED:'.length, -1)); } catch { return null; }
+}
+
+const LOCATION_TYPES = [
+  { value: 'IATA',    label: 'Airport',  placeholder: 'e.g. Delhi Airport, BOM' },
+  { value: 'ATLAS',   label: 'Hotel / City', placeholder: 'e.g. Connaught Place, Delhi' },
+  { value: 'PORT',    label: 'Cruise Port',  placeholder: 'e.g. Barcelona Cruise Port' },
+  { value: 'STATION', label: 'Station',      placeholder: 'e.g. Roma Termini, Mumbai CSMT' },
+];
+
+function TransferSearchForm({ prefill = {}, onSubmit, done }) {
+  const today = new Date().toISOString().split('T')[0];
+  const [from,      setFrom]      = useState(prefill.from  || '');
+  const [fromType,  setFromType]  = useState(prefill.fromType || 'IATA');
+  const [to,        setTo]        = useState(prefill.to    || '');
+  const [toType,    setToType]    = useState(prefill.toType  || 'ATLAS');
+  const [date,      setDate]      = useState(prefill.date  || '');
+  const [adultsStr, setAdultsStr] = useState(String(prefill.adults || 2));
+
+  // 12-hour time state — parse prefill.time (HH:MM) if provided
+  const initTime = (() => {
+    if (!prefill.time) return { hour: '12', minute: '00', period: 'PM' };
+    const [h, m] = prefill.time.split(':').map(Number);
+    return {
+      hour:   h === 0 ? '12' : h > 12 ? String(h - 12) : String(h),
+      minute: String(m || 0).padStart(2, '0'),
+      period: h >= 12 ? 'PM' : 'AM',
+    };
+  })();
+  const [hour,   setHour]   = useState(initTime.hour);
+  const [minute, setMinute] = useState(initTime.minute);
+  const [period, setPeriod] = useState(initTime.period);
+
+  // Convert to HH:MM for the API
+  const time24 = (() => {
+    let h = parseInt(hour, 10) || 12;
+    if (period === 'AM') { if (h === 12) h = 0; }
+    else                 { if (h !== 12) h += 12; }
+    return `${String(h).padStart(2, '0')}:${minute}`;
+  })();
+
+  const MINUTES = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+  function incrHour()   { setHour(h => String(parseInt(h, 10) % 12 + 1)); }
+  function decrHour()   { setHour(h => String((parseInt(h, 10) - 2 + 12) % 12 + 1)); }
+  function incrMinute() { setMinute(m => MINUTES[(MINUTES.indexOf(m) + 1) % MINUTES.length]); }
+  function decrMinute() { setMinute(m => MINUTES[(MINUTES.indexOf(m) - 1 + MINUTES.length) % MINUTES.length]); }
+
+  const adults = Math.max(1, parseInt(adultsStr, 10) || 1);
+  const valid  = from.trim() && to.trim() && date && hour && minute;
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    onSubmit(from.trim(), fromType, to.trim(), toType, date, time24, adults);
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Search submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handleSubmit} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Book a Transfer
+      </p>
+
+      {/* FROM */}
+      <div style={labelStyle}>
+        <span style={labelTextStyle}>From</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+          {LOCATION_TYPES.map(lt => (
+            <button key={lt.value} type="button" onClick={() => setFromType(lt.value)} style={{
+              padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              border: fromType === lt.value ? '1.5px solid #000' : '1.5px solid #e0e0e0',
+              background: fromType === lt.value ? '#000' : '#fff',
+              color: fromType === lt.value ? '#fff' : '#888',
+              transition: 'all 0.15s',
+            }}>{lt.label}</button>
+          ))}
+        </div>
+        <input type="text" value={from} required
+          placeholder={(LOCATION_TYPES.find(l => l.value === fromType) || LOCATION_TYPES[0]).placeholder}
+          onChange={e => setFrom(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </div>
+
+      {/* TO */}
+      <div style={labelStyle}>
+        <span style={labelTextStyle}>To</span>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
+          {LOCATION_TYPES.map(lt => (
+            <button key={lt.value} type="button" onClick={() => setToType(lt.value)} style={{
+              padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer',
+              border: toType === lt.value ? '1.5px solid #000' : '1.5px solid #e0e0e0',
+              background: toType === lt.value ? '#000' : '#fff',
+              color: toType === lt.value ? '#fff' : '#888',
+              transition: 'all 0.15s',
+            }}>{lt.label}</button>
+          ))}
+        </div>
+        <input type="text" value={to} required
+          placeholder={(LOCATION_TYPES.find(l => l.value === toType) || LOCATION_TYPES[1]).placeholder}
+          onChange={e => setTo(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Date</span>
+        <input type="date" value={date} required min={today}
+          onChange={e => setDate(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <div style={{ marginBottom: 18 }}>
+        <span style={labelTextStyle}>Pickup Time</span>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: '#f7f7f7', border: '1px solid #e8e8e8',
+          borderRadius: 10, padding: '6px 12px', gap: 4,
+        }}>
+          {(() => {
+            const spinBtn = {
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#bbb', padding: '2px 6px', borderRadius: 5, display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              transition: 'color 0.15s, background 0.15s',
+            };
+            const ChevUp = () => (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M18 15l-6-6-6 6" />
+              </svg>
+            );
+            const ChevDown = () => (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+              </svg>
+            );
+            return (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <button type="button" onClick={incrHour} style={spinBtn}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.background = '#ebebeb'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#bbb'; e.currentTarget.style.background = 'none'; }}>
+                    <ChevUp />
+                  </button>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#0d0d0d', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                    {String(hour).padStart(2, '0')}
+                  </span>
+                  <button type="button" onClick={decrHour} style={spinBtn}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.background = '#ebebeb'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#bbb'; e.currentTarget.style.background = 'none'; }}>
+                    <ChevDown />
+                  </button>
+                </div>
+
+                <span style={{ fontSize: 17, fontWeight: 300, color: '#ccc', userSelect: 'none', marginBottom: 1 }}>:</span>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+                  <button type="button" onClick={incrMinute} style={spinBtn}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.background = '#ebebeb'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#bbb'; e.currentTarget.style.background = 'none'; }}>
+                    <ChevUp />
+                  </button>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#0d0d0d', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                    {minute}
+                  </span>
+                  <button type="button" onClick={decrMinute} style={spinBtn}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.background = '#ebebeb'; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#bbb'; e.currentTarget.style.background = 'none'; }}>
+                    <ChevDown />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 4, borderRadius: 7, overflow: 'hidden', border: '1px solid #e0e0e0', flexShrink: 0 }}>
+                  {['AM', 'PM'].map(p => (
+                    <button key={p} type="button" onClick={() => setPeriod(p)} style={{
+                      border: 'none', padding: '5px 9px',
+                      background: period === p ? '#000' : '#fff',
+                      color: period === p ? '#fff' : '#aaa',
+                      fontSize: 10, fontWeight: 700, cursor: 'pointer',
+                      transition: 'background 0.15s, color 0.15s',
+                      letterSpacing: '0.04em',
+                      borderBottom: p === 'AM' ? '1px solid #e0e0e0' : 'none',
+                    }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      </div>
+
+      <label style={{ ...labelStyle, marginBottom: 18 }}>
+        <span style={labelTextStyle}>Passengers</span>
+        <input type="number" value={adultsStr} min={1} required
+          onChange={e => setAdultsStr(e.target.value)}
+          onBlur={e => { const n = Math.max(1, parseInt(e.target.value, 10) || 1); setAdultsStr(String(n)); e.target.style.borderColor = '#e0e0e0'; }}
+          style={fieldStyle} onFocus={e => e.target.style.borderColor = '#999'} />
+      </label>
+
+      <button type="submit" disabled={!valid} style={{
+        width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+        background: valid ? '#000' : '#d9d9d9', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
+      }}>
+        Search Transfers
+      </button>
+    </form>
+  );
+}
+
+function TransferCard({ transfer, onSelect, done, isMobile }) {
+  const [hov, setHov] = useState(false);
+  const fmt = n => Number(n).toLocaleString('en-IN');
+
+  return (
+    <div
+      onClick={() => !done && onSelect(transfer)}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: '#fff', border: `1px solid ${hov && !done ? '#000' : '#e5e5e5'}`,
+        borderRadius: 14, cursor: done ? 'default' : 'pointer',
+        overflow: 'hidden', marginBottom: 10,
+        boxShadow: hov && !done ? '0 4px 14px rgba(0,0,0,0.11)' : '0 1px 6px rgba(0,0,0,0.06)',
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {transfer.imageUrl && (
+        <img src={transfer.imageUrl} alt={transfer.vehicle}
+          style={{ width: '100%', height: 130, objectFit: 'cover', display: 'block' }}
+          onError={e => { e.target.style.display = 'none'; }} />
+      )}
+      <div style={{ padding: isMobile ? '10px 12px' : '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+          <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
+            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#0d0d0d', lineHeight: 1.3 }}>{transfer.type}</div>
+            <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{transfer.vehicle}</div>
+          </div>
+          {transfer.price > 0 && (
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#0d0d0d' }}>
+                {transfer.currency} {fmt(transfer.price)}
+              </div>
+            </div>
+          )}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          {transfer.maxPax > 0 && (
+            <span style={{ fontSize: 11, color: '#555', background: '#f4f4f4', borderRadius: 6, padding: '3px 7px' }}>
+              Up to {transfer.maxPax} pax
+            </span>
+          )}
+          {transfer.duration && (
+            <span style={{ fontSize: 11, color: '#555', background: '#f4f4f4', borderRadius: 6, padding: '3px 7px' }}>
+              {transfer.duration}
+            </span>
+          )}
+        </div>
+        {!done && (
+          <div style={{ fontSize: 12, color: hov ? '#000' : '#aaa', textAlign: 'right', marginTop: 8, fontWeight: hov ? 600 : 400 }}>
+            {hov ? 'Tap to select →' : 'Select'}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TransferList({ transfers, fromName, toName, date, time, onSelect, done, isMobile }) {
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Transfer selected
+      </div>
+    );
+  }
+  return (
+    <div style={{ width: '100%', maxWidth: isMobile ? '100%' : 520 }}>
+      {(fromName || toName) && (
+        <p style={{ margin: '0 0 4px', fontSize: 13, color: '#666' }}>
+          {fromName} → {toName}
+        </p>
+      )}
+      {(date || time) && (
+        <p style={{ margin: '0 0 14px', fontSize: 12, color: '#aaa' }}>
+          {date}{time ? ` at ${time}` : ''}
+        </p>
+      )}
+      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#0d0d0d' }}>
+        Available transfers — tap one to select:
+      </p>
+      {transfers.map(t => (
+        <TransferCard key={t.id} transfer={t} onSelect={onSelect} done={done} isMobile={isMobile} />
+      ))}
+    </div>
+  );
+}
+
+function TransferGuestForm({ onSubmit, done }) {
+  const [firstName, setFirstName] = useState('');
+  const [lastName,  setLastName]  = useState('');
+  const [email,     setEmail]     = useState('');
+  const [phone,     setPhone]     = useState('');
+
+  const valid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!valid) return;
+    onSubmit(firstName.trim(), lastName.trim(), email.trim(), phone.trim());
+  }
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Details submitted
+      </div>
+    );
+  }
+
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handleSubmit} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>
+        Passenger Details
+      </p>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>First Name</span>
+          <input type="text" value={firstName} required placeholder="Rahul"
+            onChange={e => setFirstName(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Last Name</span>
+          <input type="text" value={lastName} required placeholder="Sharma"
+            onChange={e => setLastName(e.target.value)} style={fieldStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Email Address</span>
+        <input type="email" value={email} required placeholder="rahul@example.com"
+          onChange={e => setEmail(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <label style={{ ...labelStyle, marginBottom: 18 }}>
+        <span style={labelTextStyle}>Phone Number</span>
+        <input type="tel" value={phone} required placeholder="9834725737"
+          onChange={e => setPhone(e.target.value)} style={fieldStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <button type="submit" disabled={!valid} style={{
+        width: '100%', padding: '11px', borderRadius: 10, border: 'none',
+        background: valid ? '#000' : '#d9d9d9', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
+      }}>
+        Continue to Payment
+      </button>
+    </form>
+  );
+}
+
+function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
+  const [cardNum, setCardNum] = useState('');
+  const [expiry,  setExpiry]  = useState('');
+  const [cvv,     setCvv]     = useState('');
+  const [paying,  setPaying]  = useState(false);
+  const [error,   setError]   = useState('');
+
+  const cardClean = cardNum.replace(/\s/g, '');
+  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+
+  if (done) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        background: '#f0fdf4', border: '1px solid #bbf7d0',
+        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#166534',
+      }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+        Payment complete
+      </div>
+    );
+  }
+
+  function fmtCard(val)   { return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); }
+  function fmtExpiry(val) { const d = val.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; }
+
+  async function handlePay(e) {
+    e.preventDefault();
+    if (!valid || paying) return;
+    setPaying(true);
+    setError('');
+    try {
+      const res = await fetch('/api/transfers/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rateKey:  data.rateKey,
+          fromCode: data.fromCode,
+          toCode:   data.toCode,
+          date:     data.date,
+          time:     data.time,
+          adults:   data.adults || 1,
+          guest:    transferGuestRef.current,
+        }),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Booking failed'); }
+      onComplete(await res.json());
+    } catch (err) {
+      setError(err.message || 'Booking failed. Please try again.');
+      setPaying(false);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid #e0e0e0', fontSize: 14, outline: 'none',
+    color: '#0d0d0d', background: '#fafafa', boxSizing: 'border-box',
+    letterSpacing: '0.05em', transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#666', marginBottom: 5 };
+
+  return (
+    <form onSubmit={handlePay} style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#0d0d0d' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#666' }}>{data.transferType} — {data.vehicleType}</p>
+      <p style={{ margin: '0 0 4px', fontSize: 12, color: '#aaa' }}>{data.fromName || data.fromCode} → {data.toName || data.toCode}</p>
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#aaa' }}>{data.date}{data.time ? ` at ${data.time}` : ''}</p>
+
+      <div style={{ background: '#f9f9f9', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, color: '#666' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#0d0d0d' }}>
+          {data.currency} {Number(data.amount).toLocaleString('en-IN')}
+        </span>
+      </div>
+
+      <label style={labelStyle}>
+        <span style={labelTextStyle}>Card Number</span>
+        <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
+          onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
+          onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+      </label>
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Expiry</span>
+          <input type="text" value={expiry} placeholder="MM/YY"
+            onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>CVV</span>
+          <input type="text" value={cvv} placeholder="123" maxLength={4}
+            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
+            style={{ ...inputStyle, letterSpacing: '0.2em' }}
+            onFocus={e => e.target.style.borderColor = '#999'} onBlur={e => e.target.style.borderColor = '#e0e0e0'} />
+        </label>
+      </div>
+
+      {error && <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
+
+      <button type="submit" disabled={!valid || paying} style={{
+        width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
+        background: (!valid || paying) ? '#d9d9d9' : '#000', color: '#fff', fontSize: 14, fontWeight: 600,
+        cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+      }}>
+        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+      </button>
+    </form>
+  );
+}
+
+function TransferBookingConfirmed({ data }) {
+  const row = (label, value) => (
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e5e5e5' }}>
+      <span style={{ fontSize: 13, color: '#666' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#0d0d0d', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    </div>
+  );
+  return (
+    <div style={{
+      background: '#fff', border: '1px solid #e5e5e5',
+      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          width: 28, height: 28, borderRadius: '50%', background: '#dcfce7',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#166534' }}>Transfer Booked!</span>
+      </div>
+      {row('Reference',   data.reference    || '—')}
+      {row('Transfer',    data.transferType  || '—')}
+      {row('Vehicle',     data.vehicleType   || '—')}
+      {row('Passenger',   data.holderName    || '—')}
+      {row('Pickup Date', data.pickupDate    || '—')}
+      {row('Pickup Time', data.pickupTime    || '—')}
+      {row('Total paid',  `${data.currency} ${Number(data.total).toLocaleString('en-IN')}`)}
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════ */
 /*  Main ChatUI                                          */
 /* ══════════════════════════════════════════════════════ */
 export default function ChatUI({ user }) {
-  const [convs,       setConvs]       = useState([]);
-  const [activeId,    setActiveId]    = useState(null);
-  const [messages,    setMessages]    = useState([]);
-  const [input,       setInput]       = useState('');
-  const [busy,        setBusy]        = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMobile,    setIsMobile]    = useState(false);
+  const [convs,        setConvs]        = useState([]);
+  const [activeId,     setActiveId]     = useState(null);
+  const [messages,     setMessages]     = useState([]);
+  const [input,        setInput]        = useState('');
+  const [busy,         setBusy]         = useState(false);
+  const [sidebarOpen,  setSidebarOpen]  = useState(true);
+  const [isMobile,     setIsMobile]     = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
 
   const bottomRef       = useRef(null);
   const scrollRef       = useRef(null);
   const taRef           = useRef(null);
   const activeIdRef     = useRef(null);
-  const pendingGuestRef       = useRef(null);
-  const pendingFlightGuestRef = useRef(null);
+  const pendingGuestRef          = useRef(null);
+  const pendingFlightGuestRef    = useRef(null);
+  const pendingTransferGuestRef  = useRef(null);
   const scrollInstant   = useRef(false);
   const loadingConv     = useRef(false); // true when opening a past chat — skip timestamp update
 
@@ -1938,6 +2635,21 @@ export default function ChatUI({ user }) {
     check();
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
+  }, []);
+
+
+  /* ── Geolocation: detect user location on mount ── */
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        try {
+          const res = await fetch(`/api/location?lat=${coords.latitude}&lng=${coords.longitude}`);
+          if (res.ok) setUserLocation(await res.json());
+        } catch {}
+      },
+      () => {} // silently ignore denial
+    );
   }, []);
 
   /* ── Load conversation list on mount ── */
@@ -2070,7 +2782,7 @@ export default function ChatUI({ user }) {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, userLocation: userLocation || null }),
       });
       if (!res.ok) throw new Error();
       const reader = res.body.getReader();
@@ -2203,6 +2915,54 @@ export default function ChatUI({ user }) {
       currency:      booking.currency,
     });
     setMessages(prev => [...prev, { role: 'assistant', content: `[FLIGHT_BOOKING_CONFIRMED:${confirmed}]` }]);
+  }
+
+  /* ── Transfer search form: done when a user message exists after the last form ── */
+  const lastTransferSearchFormIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && TRANSFER_SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
+  const transferSearchFormDone = lastTransferSearchFormIdx !== -1 && messages.slice(lastTransferSearchFormIdx + 1).some(m => m.role === 'user');
+
+  function handleTransferSearchSubmit(from, fromType, to, toType, date, time, adults) {
+    send(`From Type: ${fromType}\nFrom: ${from}\nTo Type: ${toType}\nTo: ${to}\nDate: ${date}\nTime: ${time}\nAdults: ${adults}`);
+  }
+
+  /* ── Transfer list: done when a user message exists after the last transfer list ── */
+  const lastTransferListIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[TRANSFER_LIST:') ? i : acc, -1);
+  const transferListDone = lastTransferListIdx !== -1 && messages.slice(lastTransferListIdx + 1).some(m => m.role === 'user');
+
+  function handleTransferSelect(transfer) {
+    send(`I'd like to book ${transfer.type} - ${transfer.vehicle} (rateKey: ${transfer.rateKey})`);
+  }
+
+  /* ── Transfer guest form: done when a user message exists after the last form ── */
+  const lastTransferGuestIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.includes('[TRANSFER_GUEST_FORM]') ? i : acc, -1);
+  const transferGuestDone = lastTransferGuestIdx !== -1 && messages.slice(lastTransferGuestIdx + 1).some(m => m.role === 'user');
+
+  function handleTransferGuestSubmit(firstName, lastName, email, phone) {
+    pendingTransferGuestRef.current = { firstName, lastName, email, phone };
+    send(`First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}`);
+  }
+
+  /* ── Transfer payment gate: done when TRANSFER_BOOKING_CONFIRMED exists after it ── */
+  const lastTransferPaymentIdx = messages.reduce((acc, m, i) =>
+    m.role === 'assistant' && m.content.trim().startsWith('[TRANSFER_PAYMENT_GATE:') ? i : acc, -1);
+  const transferPaymentDone = lastTransferPaymentIdx !== -1 &&
+    messages.slice(lastTransferPaymentIdx + 1).some(m => m.content.trim().startsWith('[TRANSFER_BOOKING_CONFIRMED:'));
+
+  function handleTransferPaymentComplete(booking) {
+    const confirmed = JSON.stringify({
+      reference:    booking.bookingReference,
+      transferType: booking.transferType,
+      vehicleType:  booking.vehicleType,
+      holderName:   booking.holderName,
+      pickupDate:   booking.pickupDate,
+      pickupTime:   booking.pickupTime,
+      total:        booking.totalAmount,
+      currency:     booking.currency,
+    });
+    setMessages(prev => [...prev, { role: 'assistant', content: `[TRANSFER_BOOKING_CONFIRMED:${confirmed}]` }]);
   }
 
   const empty  = messages.length === 0;
@@ -2364,43 +3124,157 @@ export default function ChatUI({ user }) {
             <h1 style={{ fontSize: isMobile ? 22 : 28, fontWeight: 600, color: '#0d0d0d', margin: 0, letterSpacing: '-0.3px' }}>
               What would you like to book?
             </h1>
-            <p style={{ color: '#999', fontSize: 14, margin: '8px 0 24px' }}>
-              Hotels and flights worldwide — pick a service or just type.
+            <p style={{ color: '#999', fontSize: 14, margin: '8px 0 0' }}>
+              Hotels, flights, and ground transfers worldwide.
             </p>
 
-            {/* Service selection chips */}
-            <div style={{
-              display: 'flex',
-              flexDirection: isMobile ? 'column' : 'row',
-              gap: 12, marginBottom: 28,
-              width: isMobile ? '100%' : 'auto',
-              maxWidth: isMobile ? 360 : 'none',
-            }}>
-              {[
-                {
-                  label: 'Book a Hotel',
-                  sub: 'Search & reserve rooms',
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
-                    </svg>
-                  ),
-                  msg: 'I want to book a hotel',
-                },
-                {
-                  label: 'Book a Flight',
-                  sub: 'Search & reserve seats',
-                  icon: (
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.1z" />
-                    </svg>
-                  ),
-                  msg: 'I want to book a flight',
-                },
-              ].map(({ label, sub, icon, msg }) => (
-                <ServiceChip key={label} label={label} sub={sub} icon={icon} isMobile={isMobile} onClick={() => send(msg)} />
-              ))}
+            {/* Location indicator */}
+            {userLocation?.displayName && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '8px 0 0', color: '#888', fontSize: 13 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  <circle cx="12" cy="9" r="2.5" />
+                </svg>
+                {userLocation.displayName}
+              </div>
+            )}
+
+            {/* Location-aware quick suggestion chips — only for available services */}
+            {userLocation?.city && (() => {
+              const svc = userLocation.services || {};
+              const ap  = userLocation.nearestAirport;
+              const chips = [
+                svc.hotels   !== false && { svc: 'hotels',    label: `Hotels in ${userLocation.city}`,         msg: `Find hotels in ${userLocation.city}` },
+                svc.flights  !== false && { svc: 'flights',   label: `Flights from ${ap?.iataCode || userLocation.city}`, msg: `Search flights from ${ap ? ap.name : userLocation.city}` },
+                svc.transfers!== false && { svc: 'transfers', label: `Transfer from ${ap?.iataCode || userLocation.city}`, msg: `I need a transfer from ${ap ? ap.name : userLocation.city}` },
+              ].filter(Boolean);
+              if (!chips.length) return null;
+              return (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', margin: '14px 0 14px' }}>
+                  {chips.map(chip => (
+                    <button key={chip.label} onClick={() => send(chip.msg)} style={{
+                      padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                      border: '1px solid #e0e0e0', background: '#fff', color: '#444',
+                      cursor: 'pointer', whiteSpace: 'nowrap',
+                      transition: 'border-color 0.15s, background 0.15s',
+                    }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.background = '#f5f5f5'; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.background = '#fff'; }}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Backdrop — closes menu when clicking outside */}
+            {servicesOpen && (
+              <div
+                onClick={() => setServicesOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 50 }}
+              />
+            )}
+
+            {/* Services button + inline menu */}
+            <div style={{ position: 'relative', zIndex: 51, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 28, marginTop: userLocation?.city ? 0 : 14 }}>
+              <button
+                onClick={() => setServicesOpen(v => !v)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '11px 22px', borderRadius: 12,
+                  border: '1px solid', borderColor: servicesOpen ? '#000' : '#e0e0e0',
+                  background: servicesOpen ? '#000' : '#fff',
+                  color: servicesOpen ? '#fff' : '#0d0d0d',
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.07)',
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = '#000'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.12)'; }}}
+                onMouseLeave={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = '#e0e0e0'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(0,0,0,0.07)'; }}}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="3" width="7" height="7" rx="1" />
+                  <rect x="14" y="3" width="7" height="7" rx="1" />
+                  <rect x="3" y="14" width="7" height="7" rx="1" />
+                  <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Services
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                  style={{ transform: servicesOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                </svg>
+              </button>
+
+              {servicesOpen && (
+                <div style={{
+                  background: '#fff', border: '1px solid #e8e8e8',
+                  borderRadius: 14, boxShadow: '0 8px 28px rgba(0,0,0,0.13)',
+                  width: Math.min(300, (typeof window !== 'undefined' ? window.innerWidth : 300) - 32),
+                  overflow: 'hidden',
+                }}>
+                  {(() => {
+                    const svc = userLocation?.services;
+                    const allItems = [
+                      {
+                        svcKey: 'hotels',
+                        label: 'Book a Hotel',
+                        sub: 'Search & reserve rooms',
+                        msg: 'I want to book a hotel',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 22V12h6v10" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        svcKey: 'flights',
+                        label: 'Book a Flight',
+                        sub: 'Search & reserve seats',
+                        msg: 'I want to book a flight',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.1z" />
+                          </svg>
+                        ),
+                      },
+                      {
+                        svcKey: 'transfers',
+                        label: 'Book a Transfer',
+                        sub: 'Airport taxis & shuttles',
+                        msg: 'I want to book a transfer',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11a2 2 0 012 2v3" />
+                            <rect x="9" y="11" width="14" height="10" rx="2" />
+                            <circle cx="12" cy="21" r="1" />
+                            <circle cx="20" cy="21" r="1" />
+                          </svg>
+                        ),
+                      },
+                    ];
+                    // When location is known, hide services marked false; otherwise show all
+                    const visible = allItems.filter(item => !svc || svc[item.svcKey] !== false);
+                    // Show unavailable ones greyed out at the bottom
+                    const unavailable = allItems.filter(item => svc && svc[item.svcKey] === false);
+                    return [...visible, ...unavailable].map(({ svcKey, label, sub, msg, icon }, idx, arr) => {
+                      const disabled = svc && svc[svcKey] === false;
+                      return (
+                        <div key={label} style={{ opacity: disabled ? 0.45 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+                          <ServiceMenuItem
+                            label={label}
+                            sub={disabled ? 'Not available in your area' : sub}
+                            icon={icon}
+                            isLast={idx === arr.length - 1}
+                            onClick={disabled ? undefined : () => { setServicesOpen(false); send(msg); }}
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              )}
             </div>
 
             <div style={{
@@ -2456,6 +3330,15 @@ export default function ChatUI({ user }) {
                       onFlightPaymentComplete={handleFlightPaymentComplete}
                       flightPaymentDone={flightPaymentDone}
                       flightGuestRef={pendingFlightGuestRef}
+                      onTransferSearchSubmit={handleTransferSearchSubmit}
+                      transferSearchFormDone={transferSearchFormDone}
+                      onTransferSelect={handleTransferSelect}
+                      transferListDone={transferListDone}
+                      onTransferGuestSubmit={handleTransferGuestSubmit}
+                      transferGuestDone={transferGuestDone}
+                      onTransferPaymentComplete={handleTransferPaymentComplete}
+                      transferPaymentDone={transferPaymentDone}
+                      transferGuestRef={pendingTransferGuestRef}
                     />
                   </React.Fragment>
                 ))}

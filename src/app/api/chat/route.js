@@ -1,17 +1,38 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { searchHotels, getHotelDetails, searchDestinations, checkRate } from '../../lib/hotelbeds';
 import { searchAirports, searchFlights } from '../../lib/flights';
+import { searchTransfers, searchTransferLocations } from '../../lib/transfers';
+import { getFlightStatus } from '../../lib/aviationstack';
 import { getSession } from '../../lib/session';
 
 const client = new Anthropic();
 
-function getSystemPrompt() {
+function getSystemPrompt(userLocation = null) {
   const today = new Date();
   const dateStr = today.toISOString().split('T')[0];
   const readable = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
+  const locationLines = userLocation?.displayName
+    ? (() => {
+        const ap = userLocation.nearestAirport;
+        const svc = userLocation.services || {};
+        const available = Object.entries({ hotels: 'hotels', flights: 'flights', transfers: 'ground transfers' })
+          .filter(([k]) => svc[k] !== false).map(([, v]) => v);
+        const unavailable = Object.entries({ hotels: 'hotels', flights: 'flights', transfers: 'ground transfers' })
+          .filter(([k]) => svc[k] === false).map(([, v]) => v);
+        return [
+          `USER LOCATION: The user is currently in ${userLocation.displayName}${ap ? ` — nearest airport: ${ap.name} (${ap.iataCode})` : ''}.`,
+          `When the user does not specify a departure city or current location, assume they are in ${userLocation.city || userLocation.displayName}. Pre-fill this into transfer "From" fields and use it as the default origin for flights.`,
+          available.length   ? `AVAILABLE SERVICES at this location: ${available.join(', ')}.` : '',
+          unavailable.length ? `UNAVAILABLE SERVICES at this location: ${unavailable.join(', ')}. If the user asks for these, politely explain they are not available in their area and suggest alternatives.` : '',
+          ``,
+        ].filter(Boolean);
+      })()
+    : [];
+
   return [
-    `You are Pargo AI, an AI travel assistant that helps users search and book hotels and flights worldwide.`,
+    ...locationLines,
+    `You are Pargo AI, an AI travel assistant that helps users search and book hotels, flights, and airport transfers worldwide.`,
     `Today's date is ${readable} (${dateStr}). Always use this as your reference for interpreting dates.`,
     `When a user mentions dates (e.g. "20 June", "next Friday", "20th to 28th"), always resolve them to future dates relative to today (${dateStr}). If the date has already passed this year, use next year. Never search or book dates in the past.`,
     ``,
@@ -36,7 +57,7 @@ function getSystemPrompt() {
     ``,
     `LANGUAGE RULE: Detect the language of the user's message and always reply in that same language. If the user writes in Hindi (or Hinglish), reply in Hindi. If the user writes in English, reply in English. Never switch languages unless the user does first.`,
     ``,
-    `You help users find and book hotels and flights worldwide. You are also a knowledgeable travel assistant — answer any general hotel, flight, or travel question helpfully, even if it is not directly about making a new booking.`,
+    `You help users find and book hotels, flights, and airport transfers worldwide. You can also check real-time flight status. You are a knowledgeable travel assistant — answer any general hotel, flight, transfer, or travel question helpfully, even if it is not directly about making a new booking.`,
     ``,
     `GENERAL TRAVEL KNOWLEDGE — answer these without deflecting:`,
     `- Check-in/check-out procedures, what documents to bring, early/late check-in policies`,
@@ -54,9 +75,11 @@ function getSystemPrompt() {
     `If the user's message is purely a greeting or small talk (e.g. "hi", "hello", "good morning", "hey", "how are you"), reply warmly and briefly, then add ONE casual travel-related follow-up — do NOT ask for destination or dates specifically. Examples: "Good morning! Any travel plans coming up?" / "Hey! Planning a trip somewhere?" / "Hello! Hotels, flights, or both?". Vary the phrasing every time. Do NOT trigger any STEP below for greetings.`,
     ``,
     `SERVICE DETECTION — check this BEFORE the steps below:`,
-    `- If the user mentions flying, flight, plane, airport, airline, air travel, or fly → use FLIGHTS WORKFLOW`,
+    `- If the user asks about a specific flight's status, delay, arrival or departure time (e.g. "is AI101 on time?", "flight status of 6E456") → use FLIGHT STATUS`,
+    `- If the user mentions flying, flight, plane, airport, airline, air travel, or fly (and is booking, not checking status) → use FLIGHTS WORKFLOW`,
     `- If the user mentions hotel, stay, accommodation, room, check-in, check-out → use HOTELS WORKFLOW`,
-    `- If unclear whether they want a hotel or flight → ask which they would like to search first`,
+    `- If the user mentions transfer, taxi, cab, shuttle, pickup, drop, airport transfer, airport cab, airport taxi, transport to/from airport, cruise port transfer, port pickup, train station transfer, hotel to hotel, point to point transfer, private car, or any ground transport → use TRANSFERS WORKFLOW`,
+    `- If unclear → ask which they would like: hotel, flight, or transfer`,
     ``,
     `---`,
     ``,
@@ -193,11 +216,75 @@ function getSystemPrompt() {
     ``,
     `---`,
     ``,
+    `---`,
+    ``,
+    `TRANSFERS WORKFLOW`,
+    ``,
+    `TRANSFER STEP 1 — COLLECT SEARCH DETAILS VIA FORM`,
+    `When the user wants any ground transport (airport transfer, port pickup, station transfer, hotel-to-hotel, point-to-point, taxi, shuttle, cab, or private car), output ONLY this token — no text before or after it:`,
+    `[TRANSFER_SEARCH_FORM:{"from":"<location if known, else empty>","fromType":"<IATA|ATLAS|PORT|STATION — default IATA>","to":"<destination if known, else empty>","toType":"<IATA|ATLAS|PORT|STATION — default ATLAS>","date":"<YYYY-MM-DD if known, else empty>","time":"<HH:MM if known, else empty>","adults":2}]`,
+    ``,
+    `Location types: IATA = airport, ATLAS = hotel or city destination, PORT = cruise/ferry port, STATION = train or bus station.`,
+    `Pre-fill fromType/toType based on context (e.g. "from the airport" → IATA, "from cruise port" → PORT, "from train station" → STATION, "from hotel" → ATLAS).`,
+    `Pre-fill other fields if known. Use 24-hour HH:MM for time. Default adults to 2.`,
+    `After the user submits the form, their message looks like:`,
+    `"From Type: IATA`,
+    `From: Delhi Airport`,
+    `To Type: ATLAS`,
+    `To: Connaught Place, Delhi`,
+    `Date: 2026-07-10`,
+    `Time: 14:00`,
+    `Adults: 2"`,
+    `Then proceed to TRANSFER STEP 2.`,
+    ``,
+    `TRANSFER STEP 2 — LOOKUP CODES`,
+    `Based on the From Type and To Type, look up the correct codes:`,
+    `- IATA (airport): call search_airports to get the IATA code`,
+    `- ATLAS (hotel/city): call search_destinations to get the ATLAS code`,
+    `- PORT (cruise/ferry port): call search_transfer_locations with locationType="PORT"`,
+    `- STATION (train/bus station): call search_transfer_locations with locationType="STATION"`,
+    `Call the relevant lookup tool(s) simultaneously, then call search_transfers with fromCode, fromType, toCode, toType.`,
+    ``,
+    `TRANSFER SEARCH ERROR HANDLING:`,
+    `- NO RESULTS (transfers array is empty): Respond with "No transfers found for those details." Then re-show [TRANSFER_SEARCH_FORM] with the same details pre-filled.`,
+    `- API ERROR: Respond with one short sentence then re-show [TRANSFER_SEARCH_FORM] with the same details pre-filled.`,
+    ``,
+    `TRANSFER STEP 3 — SHOW RESULTS`,
+    `Output EXACTLY this token and nothing else — no text before or after it:`,
+    `[TRANSFER_LIST:{"fromCode":"<code>","fromType":"<type>","fromName":"<location name>","toCode":"<code>","toType":"<type>","toName":"<location name>","date":"<date>","time":"<time>","adults":<adults>,"transfers":[{"id":"...","rateKey":"...","type":"...","vehicle":"...","maxPax":...,"price":...,"currency":"...","duration":"..."},...]}]`,
+    ``,
+    `After the user selects a transfer, their message looks like:`,
+    `"I'd like to book [Transfer Type] - [Vehicle] (rateKey: <rateKey>)"`,
+    `Then proceed to TRANSFER STEP 4.`,
+    ``,
+    `TRANSFER STEP 4 — COLLECT GUEST DETAILS`,
+    `Output ONLY: [TRANSFER_GUEST_FORM]`,
+    ``,
+    `TRANSFER STEP 5 — INITIATE PAYMENT`,
+    `After receiving guest details (formatted as "First Name: ...\nLast Name: ...\nEmail: ...\nPhone: ..."), output ONLY:`,
+    `[TRANSFER_PAYMENT_GATE:{"rateKey":"<rateKey>","fromCode":"<fromCode>","fromType":"<fromType>","fromName":"<fromName>","toCode":"<toCode>","toType":"<toType>","toName":"<toName>","date":"<date>","time":"<time>","amount":<price>,"currency":"<currency>","transferType":"<type>","vehicleType":"<vehicle>","adults":<adults>}]`,
+    ``,
+    `Do NOT output any other text. The payment system handles the booking automatically.`,
+    ``,
+    `---`,
+    ``,
+    `FLIGHT STATUS`,
+    ``,
+    `When the user asks about a specific flight's real-time status, delay, or schedule:`,
+    `- If no flight number is given, ask: "What is the flight number? (e.g., AI101, 6E456, EK512)"`,
+    `- If a date is given, pass it; otherwise omit (defaults to today).`,
+    `- Call get_flight_status with the flight IATA code (e.g., AI101).`,
+    `- If found: report status (on time / delayed / landed / cancelled), departure airport + scheduled/actual time, arrival airport + scheduled/actual time, and delay in minutes if any.`,
+    `- If not found: say no live data is available for that flight and suggest checking the airline's website.`,
+    `- This is informational only — do NOT show any booking form.`,
+    ``,
+    `---`,
+    ``,
     `Style rules:`,
     `Never use bullet points to collect information from the user — ask in plain prose.`,
     `Keep responses warm, helpful, and concise — like a knowledgeable travel concierge.`,
     `If no hotels or flights are found, suggest alternative dates or nearby destinations.`,
-    `When a user asks what you can do, briefly explain you help search, book, and answer questions about hotels and flights — keep it to 2-3 sentences.`,
+    `When a user asks what you can do, briefly explain you help search, book, and answer questions about hotels, flights, and all ground transfers (airport, cruise port, train station, hotel-to-hotel, point-to-point), plus check real-time flight status — keep it to 2-3 sentences.`,
     `Only decline questions that are completely unrelated to travel (e.g. coding help, recipes). For everything travel related, always try to give a useful answer first.`,
     `Never use emojis in any response.`,
   ].join('\n');
@@ -279,6 +366,47 @@ const TOOLS = [
       required: ['origin', 'destination', 'departureDate'],
     },
   },
+  {
+    name: 'search_transfer_locations',
+    description: 'Search for PORT (cruise/ferry port) or STATION (train/bus station) location codes. Use this when the user wants a pickup or dropoff at a port or station.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        query:        { type: 'string', description: 'Name of the port or station, e.g. "Barcelona Cruise Port", "Roma Termini", "Mumbai CSMT"' },
+        locationType: { type: 'string', enum: ['PORT', 'STATION'], description: 'PORT for cruise or ferry ports, STATION for train or bus stations' },
+      },
+      required: ['query', 'locationType'],
+    },
+  },
+  {
+    name: 'search_transfers',
+    description: 'Search for available ground transfers. fromType/toType control the location kind: IATA=airport, ATLAS=hotel or city, PORT=cruise/ferry port, STATION=train/bus station. Look up codes first with the matching tool.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        fromCode: { type: 'string', description: 'Origin location code (IATA code, ATLAS code, PORT code, or STATION code)' },
+        fromType: { type: 'string', enum: ['IATA', 'ATLAS', 'PORT', 'STATION'], description: 'Origin location type' },
+        toCode:   { type: 'string', description: 'Destination location code' },
+        toType:   { type: 'string', enum: ['IATA', 'ATLAS', 'PORT', 'STATION'], description: 'Destination location type' },
+        date:     { type: 'string', description: 'Transfer date in YYYY-MM-DD format' },
+        time:     { type: 'string', description: 'Pickup time in HH:MM (24-hour) format' },
+        adults:   { type: 'number', description: 'Number of passengers (default 2)' },
+      },
+      required: ['fromCode', 'fromType', 'toCode', 'toType', 'date', 'time'],
+    },
+  },
+  {
+    name: 'get_flight_status',
+    description: 'Get real-time status of a flight by its IATA flight number (e.g. AI101, 6E456, EK512).',
+    input_schema: {
+      type: 'object',
+      properties: {
+        flightIata: { type: 'string', description: 'IATA flight code, e.g. AI101, 6E456, EK512' },
+        date:       { type: 'string', description: 'Flight date in YYYY-MM-DD format (optional, defaults to today)' },
+      },
+      required: ['flightIata'],
+    },
+  },
 ];
 
 async function executeTool(name, input) {
@@ -289,8 +417,11 @@ async function executeTool(name, input) {
       case 'search_hotels':       result = await searchHotels(input.destinationCode, input.checkIn, input.checkOut, input.adults || 2, input.currency || 'INR'); break;
       case 'get_hotel_details':   result = await getHotelDetails(input.hotelCode); break;
       case 'check_rate':          result = await checkRate(input.rateKey); break;
-      case 'search_airports':     result = await searchAirports(input.query); break;
-      case 'search_flights':      result = await searchFlights(input.origin, input.destination, input.departureDate, input.returnDate || '', input.adults || 1, input.cabinClass || 'economy'); break;
+      case 'search_airports':  result = await searchAirports(input.query); break;
+      case 'search_flights':   result = await searchFlights(input.origin, input.destination, input.departureDate, input.returnDate || '', input.adults || 1, input.cabinClass || 'economy'); break;
+      case 'search_transfer_locations': result = await searchTransferLocations({ query: input.query, locationType: input.locationType }); break;
+      case 'search_transfers': result = await searchTransfers({ fromCode: input.fromCode, fromType: input.fromType || 'IATA', toCode: input.toCode, toType: input.toType || 'ATLAS', date: input.date, time: input.time, adults: input.adults || 2 }); break;
+      case 'get_flight_status': result = await getFlightStatus(input.flightIata, input.date || ''); break;
       default: result = { error: `Unknown tool: ${name}` };
     }
     console.log(`[tool:${name}] input:`, JSON.stringify(input), '| result:', JSON.stringify(result));
@@ -305,7 +436,7 @@ export async function POST(request) {
   const session = await getSession();
   if (!session?.userId) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { messages } = await request.json();
+  const { messages, userLocation } = await request.json();
 
   const encoder = new TextEncoder();
   const readable = new ReadableStream({
@@ -318,7 +449,7 @@ export async function POST(request) {
           const response = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
             max_tokens: 4096,
-            system: getSystemPrompt(),
+            system: getSystemPrompt(userLocation),
             tools: TOOLS,
             messages: apiMessages,
           });
