@@ -459,9 +459,9 @@ function GPTAvatar() {
       width: 30, height: 30, borderRadius: '50%',
       background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)', color: '#fff',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontSize: 13, fontWeight: 700, flexShrink: 0,
-      boxShadow: '0 0 24px rgba(139,92,246,0.85), 0 0 48px rgba(139,92,246,0.4)',
-      animation: 'pulseGlow 3s ease-in-out infinite',
+      fontSize: 12, fontWeight: 700, flexShrink: 0,
+      boxShadow: '0 0 14px rgba(139,92,246,0.7), 0 0 28px rgba(6,182,212,0.2)',
+      border: '1px solid rgba(139,92,246,0.35)',
     }}>P</div>
   );
 }
@@ -472,14 +472,14 @@ function SendButton({ onClick, disabled }) {
     <button
       onClick={onClick}
       disabled={disabled}
+      className={disabled ? '' : 'send-active'}
       style={{
         width: 34, height: 32, borderRadius: '60%',
         background: disabled ? 'rgba(139,92,246,0.08)' : 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
         color: '#fff', border: 'none',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, transition: 'background 0.15s, box-shadow 0.15s',
-        boxShadow: disabled ? 'none' : '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)',
+        flexShrink: 0, transition: 'background 0.15s',
       }}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
@@ -491,10 +491,18 @@ function SendButton({ onClick, disabled }) {
 
 /* ── Typing dots ─────────────────────────────────────── */
 function Thinking({ isMobile }) {
+  const px = isMobile ? 12 : 24;
+  const g  = isMobile ? 10 : 16;
   return (
-    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${isMobile ? 12 : 24}px`, display: 'flex', gap: isMobile ? 10 : 16, alignItems: 'flex-start' }}>
+    <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap: g, alignItems: 'flex-start' }}>
       <GPTAvatar />
-      <div style={{ paddingTop: 3, display: 'flex', gap: 4 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 7,
+        background: 'rgba(139,92,246,0.06)',
+        border: '1px solid rgba(139,92,246,0.18)',
+        borderRadius: 14, padding: '10px 18px',
+        backdropFilter: 'blur(8px)',
+      }}>
         <span className="dot" /><span className="dot" /><span className="dot" />
       </div>
     </div>
@@ -588,12 +596,15 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
           ? `I'd like to book ${transferMatch[1]}`
           : content;
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
+      <div className="msg-user" style={{ padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 60%, #0EA5E9 100%)', color: '#ffffff', borderRadius: 18,
-          padding: '10px 16px', maxWidth: '85%', fontSize: 15,
+          background: 'linear-gradient(135deg, rgba(139,92,246,0.92) 0%, rgba(79,70,229,0.96) 55%, rgba(14,165,233,0.92) 100%)',
+          color: '#ffffff', borderRadius: '18px 18px 4px 18px',
+          padding: '10px 16px', maxWidth: '78%', fontSize: 15,
           lineHeight: 1.65, whiteSpace: 'pre-wrap',
-          boxShadow: '0 4px 24px rgba(139,92,246,0.45)',
+          boxShadow: '0 0 18px rgba(139,92,246,0.5), 0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          backdropFilter: 'blur(8px)',
         }}>
           {display}
         </div>
@@ -603,7 +614,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const hotelListData = parseHotelListToken(content);
   if (hotelListData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <HotelList hotels={hotelListData.hotels || []} onSelect={onHotelSelect} done={hotelListDone} isMobile={isMobile} />
       </div>
@@ -615,7 +626,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
     try { if (sfMatch[1]) prefill = JSON.parse(sfMatch[1]); } catch {}
     const textBefore = content.slice(0, sfMatch.index).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -627,7 +638,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const paymentGateData = parsePaymentGateToken(content);
   if (paymentGateData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <PaymentGate data={paymentGateData} guestRef={guestRef} onComplete={onPaymentComplete} done={paymentGateDone} />
       </div>
@@ -636,7 +647,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const bookingConfirmedData = parseBookingConfirmedToken(content);
   if (bookingConfirmedData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <BookingConfirmed data={bookingConfirmedData} />
       </div>
@@ -646,7 +657,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   if (guestFormTokenIdx !== -1) {
     const textBefore = content.slice(0, guestFormTokenIdx).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -662,7 +673,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
     try { if (flightSearchMatch[1]) prefill = JSON.parse(flightSearchMatch[1]); } catch {}
     const textBefore = content.slice(0, flightSearchMatch.index).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -674,7 +685,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const flightListData = parseFlightListToken(content);
   if (flightListData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <FlightList flights={flightListData.flights || []} onSelect={onFlightSelect} done={flightListDone} />
       </div>
@@ -684,7 +695,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   if (flightGuestTokenIdx !== -1) {
     const textBefore = content.slice(0, flightGuestTokenIdx).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -696,7 +707,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const flightPaymentData = parseFlightPaymentToken(content);
   if (flightPaymentData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <FlightPaymentGate data={flightPaymentData} flightGuestRef={flightGuestRef} onComplete={onFlightPaymentComplete} done={flightPaymentDone} />
       </div>
@@ -705,7 +716,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const flightBookingData = parseFlightBookingConfirmedToken(content);
   if (flightBookingData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <FlightBookingConfirmed data={flightBookingData} />
       </div>
@@ -718,7 +729,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
     try { if (transferSearchMatch[1]) prefill = JSON.parse(transferSearchMatch[1]); } catch {}
     const textBefore = content.slice(0, transferSearchMatch.index).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -730,7 +741,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const transferListData = parseTransferListToken(content);
   if (transferListData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <TransferList
           transfers={transferListData.transfers || []}
@@ -749,7 +760,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   if (transferGuestTokenIdx !== -1) {
     const textBefore = content.slice(0, transferGuestTokenIdx).trim();
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
@@ -761,7 +772,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const transferPaymentData = parseTransferPaymentToken(content);
   if (transferPaymentData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <TransferPaymentGate data={transferPaymentData} transferGuestRef={transferGuestRef} onComplete={onTransferPaymentComplete} done={transferPaymentDone} />
       </div>
@@ -770,16 +781,16 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   const transferBookingData = parseTransferBookingConfirmedToken(content);
   if (transferBookingData) {
     return (
-      <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+      <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <TransferBookingConfirmed data={transferBookingData} />
       </div>
     );
   }
   return (
-    <div className="msg-in" style={{ maxWidth: 768, margin: '0 auto', padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
+    <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
       <GPTAvatar />
-      <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#F1F5F9', paddingTop: 3, flex: 1, minWidth: 0 }}>
+      <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#E2E8F0', paddingTop: 3, flex: 1, minWidth: 0 }}>
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </div>
@@ -3102,6 +3113,7 @@ export default function ChatUI({ user }) {
 
       {/* ══════════════════════════ MAIN AREA ═══════ */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+        <div className="aurora-bg" />
 
         {/* Top bar — always visible, sidebar is now always an overlay */}
         <div style={{
@@ -3110,8 +3122,9 @@ export default function ChatUI({ user }) {
           padding: '0 12px', gap: 8,
           background: 'rgba(2,4,8,0.8)',
           backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-          borderBottom: '1px solid rgba(139,92,246,0.08)',
+          borderBottom: 'none', position: 'relative',
         }}>
+          <div className="topbar-accent" />
           {/* Sidebar toggle button */}
           <LogoToggleBtn onClick={() => setSidebarOpen(v => !v)} />
 
@@ -3146,35 +3159,33 @@ export default function ChatUI({ user }) {
               padding: '0 16px 20px',
               overflowY: 'auto',
             }}>
-            <div style={{ position: 'relative', marginBottom: 20 }}>
-              {/* Outer ring */}
+            <div className="hero-logo" style={{ position: 'relative', marginBottom: 20 }}>
+              {/* Outer ring — static */}
               <div style={{
                 position: 'absolute', inset: -10, borderRadius: '50%',
-                border: '1px solid rgba(139,92,246,0.3)',
-                animation: 'pulseGlow 3s ease-in-out infinite',
+                border: '1px solid rgba(139,92,246,0.22)',
               }} />
               <div style={{
                 width: 68, height: 68, borderRadius: '50%', background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 26, fontWeight: 800, color: '#fff',
-                boxShadow: '0 0 40px rgba(139,92,246,0.9), 0 0 80px rgba(139,92,246,0.4), 0 0 120px rgba(6,182,212,0.15)',
-                animation: 'pulseGlow 3s ease-in-out infinite',
+                boxShadow: '0 0 28px rgba(139,92,246,0.65), 0 0 56px rgba(139,92,246,0.2)',
                 letterSpacing: '-1px',
               }}>P</div>
             </div>
-            <h1 style={{
+            <h1 className="gradient-heading hero-title" style={{
               fontSize: isMobile ? 26 : 38, fontWeight: 800, margin: 0, letterSpacing: '-1px',
-              lineHeight: 1.15, color: '#FFFFFF',
+              lineHeight: 1.15,
             }}>
               What would you like to book?
             </h1>
-            <p style={{ color: '#94A3B8', fontSize: 14, margin: '10px 0 0', letterSpacing: '0.2px' }}>
+            <p className="hero-sub" style={{ color: '#94A3B8', fontSize: 14, margin: '10px 0 0', letterSpacing: '0.2px' }}>
               Hotels · Flights · Ground Transfers · Worldwide
             </p>
 
             {/* Location indicator */}
             {userLocation?.displayName && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '8px 0 0', color: '#94A3B8', fontSize: 13 }}>
+              <div className="hero-loc" style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '8px 0 0', color: '#94A3B8', fontSize: 13 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                   <circle cx="12" cy="9" r="2.5" />
@@ -3269,9 +3280,10 @@ export default function ChatUI({ user }) {
             )}
 
             {/* Services button */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28, marginTop: 14 }}>
+            <div className="hero-svc" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28, marginTop: 14 }}>
               <button
                 onClick={() => setServicesOpen(v => !v)}
+                className="service-chip-shimmer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '11px 22px', borderRadius: 12,
@@ -3305,7 +3317,9 @@ export default function ChatUI({ user }) {
               padding: isMobile ? '10px 16px max(14px, env(safe-area-inset-bottom))' : '14px 32px 22px',
               background: 'rgba(2,4,8,0.88)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+              position: 'relative', zIndex: 2,
             }}>
+              <div className="input-glow-line" />
               <div style={{
                 display: 'flex', alignItems: 'flex-end', gap: 10,
               }}>
@@ -3332,7 +3346,9 @@ export default function ChatUI({ user }) {
         ) : (
           /* ── Chat state: messages + input at bottom ── */
           <>
-            <div ref={scrollRef} className="chat-scroll" style={{ flex: 1 }}>
+            <div className="chat-grid-bg" />
+            <div className="chat-scan-line" />
+            <div ref={scrollRef} className="chat-scroll" style={{ flex: 1, position: 'relative', zIndex: 2 }}>
               <div style={{ paddingTop: 24, paddingBottom: 16 }}>
                 {messages.map((m, i) => (
                   <React.Fragment key={i}>
@@ -3381,7 +3397,9 @@ export default function ChatUI({ user }) {
               padding: isMobile ? '10px 16px max(14px, env(safe-area-inset-bottom))' : '14px 32px 22px',
               background: 'rgba(2,4,8,0.88)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+              position: 'relative', zIndex: 2,
             }}>
+              <div className="input-glow-line" />
               <div style={{
                 display: 'flex', alignItems: 'flex-end', gap: 10,
               }}>
