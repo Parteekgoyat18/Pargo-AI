@@ -5,6 +5,8 @@ import { searchTransfers, searchTransferLocations } from '../../lib/transfers';
 import { getFlightStatus } from '../../lib/aviationstack';
 import { getSession } from '../../lib/session';
 
+export const dynamic = 'force-dynamic';
+
 const client = new Anthropic();
 
 function getSystemPrompt(userLocation = null) {

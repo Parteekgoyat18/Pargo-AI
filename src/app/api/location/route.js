@@ -1,6 +1,8 @@
 import { searchAirports } from '../../lib/flights';
 import { searchDestinations } from '../../lib/hotelbeds';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const lat = searchParams.get('lat');

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -43,13 +43,13 @@ function ConvMenuBtn({ icon, label, onClick, danger }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 9, width: '100%',
         padding: '7px 10px', border: 'none',
-        background: hov ? (danger ? '#fff5f5' : 'rgba(139,92,246,0.1)') : 'none',
+        background: hov ? (danger ? 'rgba(180,40,40,0.12)' : 'rgba(255,255,255,0.05)') : 'none',
         cursor: 'pointer', borderRadius: 6, fontSize: 13,
-        color: danger ? '#d33' : '#E2E8F0', textAlign: 'left',
+        color: danger ? '#E05050' : '#A09070', textAlign: 'left',
         fontFamily: 'inherit',
       }}
     >
-      <span style={{ color: danger ? '#d33' : '#A78BFA', display: 'flex', alignItems: 'center' }}>{icon}</span>
+      <span style={{ color: danger ? '#E05050' : '#706088', display: 'flex', alignItems: 'center' }}>{icon}</span>
       {label}
     </button>
   );
@@ -128,7 +128,7 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
       style={{
         padding: '6px 10px', borderRadius: 8,
         cursor: editing ? 'default' : 'pointer', marginBottom: 1,
-        background: active ? 'rgba(99,102,241,0.18)' : (hov || menuOpen) ? 'rgba(255,255,255,0.07)' : 'transparent',
+        background: active ? 'rgba(201,168,76,0.1)' : (hov || menuOpen) ? 'rgba(201,168,76,0.04)' : 'transparent',
         display: 'flex', alignItems: 'center', gap: 6,
         position: 'relative',
       }}
@@ -150,15 +150,15 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
           }}
           onClick={e => e.stopPropagation()}
           style={{
-            flex: 1, fontSize: 13.5, color: '#F4F4F5',
-            border: 'none', borderBottom: '1.5px solid #6366F1',
+            flex: 1, fontSize: 13.5, color: '#F2EDD4',
+            border: 'none', borderBottom: '1.5px solid #C9A84C',
             background: 'transparent', outline: 'none', padding: '0 2px',
             fontFamily: 'inherit',
           }}
         />
       ) : (
         <span style={{
-          fontSize: 13.5, color: active ? '#F4F4F5' : '#A1A1AA', flex: 1,
+          fontSize: 13.5, color: active ? '#F2EDD4' : '#A09070', flex: 1,
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           fontWeight: active ? 500 : 400,
         }}>
@@ -172,11 +172,11 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
             onClick={openMenu}
             title="More options"
             style={{
-              background: menuOpen ? 'rgba(99,102,241,0.2)' : 'none', border: 'none',
-              cursor: 'pointer', padding: '3px 4px', color: '#9CA3AF', flexShrink: 0,
+              background: menuOpen ? 'rgba(180,148,60,0.2)' : 'none', border: 'none',
+              cursor: 'pointer', padding: '3px 4px', color: '#9A8868', flexShrink: 0,
               display: 'flex', alignItems: 'center', borderRadius: 5,
             }}
-            onMouseEnter={e => { e.stopPropagation(); if (!menuOpen) e.currentTarget.style.background = 'rgba(99,102,241,0.15)'; }}
+            onMouseEnter={e => { e.stopPropagation(); if (!menuOpen) e.currentTarget.style.background = 'rgba(180,148,60,0.15)'; }}
             onMouseLeave={e => { if (!menuOpen) e.currentTarget.style.background = 'none'; }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -191,12 +191,12 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
                 top: menuPos.top,
                 left: menuPos.left,
                 zIndex: 9999,
-                background: 'rgba(5,8,20,0.98)',
+                background: 'rgba(14,11,7,0.98)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(139,92,246,0.2)',
+                border: '1px solid rgba(201,168,76,0.08)',
                 borderRadius: 8,
-                boxShadow: '0 24px 64px rgba(0,0,0,0.8), 0 0 0 1px rgba(139,92,246,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
+                boxShadow: '0 24px 64px rgba(0,0,0,0.9), inset 0 1px 0 rgba(201,168,76,0.04)',
                 minWidth: 152,
                 padding: '4px',
               }}
@@ -214,7 +214,7 @@ function ConvItem({ conv, active, onOpen, onDelete, onRename, onPin, isMobile })
                 icon={<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path strokeLinecap="round" strokeLinejoin="round" d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>}
                 onClick={e => { e.stopPropagation(); startRename(); }}
               />
-              <div style={{ height: 1, background: 'rgba(139,92,246,0.15)', margin: '4px 0' }} />
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '4px 0' }} />
               <ConvMenuBtn
                 label="Delete"
                 danger
@@ -239,7 +239,7 @@ function IconBtn({ onClick, title, children }) {
         background: 'none', border: 'none', cursor: 'pointer',
         width: 36, height: 36, borderRadius: 8,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#9CA3AF',
+        color: '#9A8868',
       }}
       onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.09)'}
       onMouseLeave={e => e.currentTarget.style.background = 'none'}
@@ -249,9 +249,18 @@ function IconBtn({ onClick, title, children }) {
   );
 }
 
-/* ── Logo button: shows "P" logo, swaps to sidebar icon on hover ── */
+/* ── Logo button: auto-alternates between "P" logo and sidebar icon ── */
 function LogoToggleBtn({ onClick }) {
   const [hov, setHov] = useState(false);
+  const [showP, setShowP] = useState(true);
+
+  useEffect(() => {
+    const id = setInterval(() => setShowP(v => !v), 4000);
+    return () => clearInterval(id);
+  }, []);
+
+  const displayP = !hov && showP;
+
   return (
     <button
       onClick={onClick}
@@ -263,23 +272,35 @@ function LogoToggleBtn({ onClick }) {
         border: 'none', cursor: 'ew-resize',
         width: 36, height: 36, borderRadius: 8,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#9CA3AF',
+        color: '#9A8868', position: 'relative',
       }}
     >
-      {hov ? (
+      {/* P logo */}
+      <div style={{
+        position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        opacity: displayP ? 1 : 0, transition: 'opacity 0.8s ease',
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          width: 26, height: 26, borderRadius: '50%',
+          background: 'linear-gradient(145deg, #1A1510 0%, #0D0A07 100%)', color: '#C9A84C',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 11, fontWeight: 700, letterSpacing: '-0.3px',
+          boxShadow: '0 0 12px rgba(201,168,76,0.45)',
+          border: '1px solid rgba(201,168,76,0.28)',
+        }}>P</div>
+      </div>
+      {/* Sidebar icon */}
+      <div style={{
+        position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        opacity: displayP ? 0 : 1, transition: 'opacity 0.4s ease',
+        pointerEvents: 'none',
+      }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
           <rect x="3" y="3" width="18" height="18" rx="3" />
           <path d="M9 3v18" />
         </svg>
-      ) : (
-        <div style={{
-          width: 26, height: 26, borderRadius: '50%',
-          background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)', color: '#fff',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 700, letterSpacing: '-0.3px',
-          boxShadow: '0 0 24px rgba(139,92,246,0.85), 0 0 48px rgba(139,92,246,0.4)',
-        }}>P</div>
-      )}
+      </div>
     </button>
   );
 }
@@ -300,10 +321,10 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             title="Close sidebar"
             style={{
               background: 'none', border: 'none', cursor: 'ew-resize',
-              width: 34, height: 34, borderRadius: 8, color: '#9CA3AF',
+              width: 34, height: 34, borderRadius: 8, color: '#9A8868',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -317,12 +338,12 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             title="New chat"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 15, fontWeight: 600, color: '#F4F4F5',
+              fontSize: 15, fontWeight: 600, color: '#F2EDD4',
               flex: 1, paddingLeft: 4, whiteSpace: 'nowrap',
               textAlign: 'left', padding: '0 0 0 4px', borderRadius: 6,
             }}
-            onMouseEnter={e => e.currentTarget.style.color = '#9CA3AF'}
-            onMouseLeave={e => e.currentTarget.style.color = '#F4F4F5'}
+            onMouseEnter={e => e.currentTarget.style.color = '#9A8868'}
+            onMouseLeave={e => e.currentTarget.style.color = '#F2EDD4'}
           >
             Pargo AI
           </button>
@@ -332,10 +353,10 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             title="New chat"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              width: 34, height: 34, borderRadius: 8, color: '#9CA3AF',
+              width: 34, height: 34, borderRadius: 8, color: '#9A8868',
               display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.1)'}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
             onMouseLeave={e => e.currentTarget.style.background = 'none'}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
@@ -349,7 +370,7 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
       {/* Conversation list */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px 8px' }}>
         {convs.length === 0 && (
-          <p style={{ fontSize: 13, color: '#52525B', textAlign: 'center', marginTop: 32, lineHeight: 1.5 }}>
+          <p style={{ fontSize: 13, color: '#504840', textAlign: 'center', marginTop: 32, lineHeight: 1.5 }}>
             No conversations yet
           </p>
         )}
@@ -358,7 +379,7 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
         {pinnedConvs.length > 0 && (
           <div style={{ marginBottom: 8 }}>
             <p style={{
-              fontSize: 11, color: '#71717A', fontWeight: 600,
+              fontSize: 11, color: '#706050', fontWeight: 600,
               padding: '10px 10px 4px', margin: 0, letterSpacing: '0.3px',
               display: 'flex', alignItems: 'center', gap: 5,
             }}>
@@ -387,7 +408,7 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
           items.length > 0 && (
             <div key={label} style={{ marginBottom: 8 }}>
               <p style={{
-                fontSize: 11, color: '#71717A', fontWeight: 600,
+                fontSize: 11, color: '#706050', fontWeight: 600,
                 padding: '10px 10px 4px', margin: 0, letterSpacing: '0.3px',
               }}>
                 {label}
@@ -416,19 +437,20 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '8px 10px', borderRadius: 10, cursor: 'default',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,92,246,0.08)'}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.04)'}
           onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
         >
           <div style={{
             width: 30, height: 30, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)', color: '#fff', flexShrink: 0,
+            background: 'linear-gradient(145deg, #15110A 0%, #0D0A07 100%)', color: '#C9A84C', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 12, fontWeight: 700,
+            border: '1px solid rgba(201,168,76,0.2)',
           }}>
             {(user.name || 'U').slice(0, 2).toUpperCase()}
           </div>
           <span style={{
-            fontSize: 13.5, fontWeight: 500, color: '#F4F4F5', flex: 1,
+            fontSize: 13.5, fontWeight: 500, color: '#F2EDD4', flex: 1,
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           }}>
             {user.name}
@@ -436,10 +458,10 @@ function SidebarContent({ onClose, onNewChat, convs, activeId, openConv, deleteC
           <form action={logoutAction}>
             <button type="submit" title="Sign out" style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              padding: 4, color: '#9CA3AF', display: 'flex', alignItems: 'center', borderRadius: 6,
+              padding: 4, color: '#9A8868', display: 'flex', alignItems: 'center', borderRadius: 6,
             }}
-              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#F4F4F5'; }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#9CA3AF'; }}
+              onMouseEnter={e => { e.stopPropagation(); e.currentTarget.style.color = '#F2EDD4'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#9A8868'; }}
             >
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
@@ -457,11 +479,12 @@ function GPTAvatar() {
   return (
     <div style={{
       width: 30, height: 30, borderRadius: '50%',
-      background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)', color: '#fff',
+      background: 'linear-gradient(145deg, #181410 0%, #0D0A07 100%)', color: '#C9A84C',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontSize: 12, fontWeight: 700, flexShrink: 0,
-      boxShadow: '0 0 14px rgba(139,92,246,0.7), 0 0 28px rgba(6,182,212,0.2)',
-      border: '1px solid rgba(139,92,246,0.35)',
+      boxShadow: '0 0 14px rgba(201,168,76,0.4), 0 0 28px rgba(201,168,76,0.1)',
+      border: '1px solid rgba(201,168,76,0.28)',
+      textShadow: '0 0 8px rgba(215,178,80,0.6)',
     }}>P</div>
   );
 }
@@ -475,11 +498,12 @@ function SendButton({ onClick, disabled }) {
       className={disabled ? '' : 'send-active'}
       style={{
         width: 34, height: 32, borderRadius: '60%',
-        background: disabled ? 'rgba(139,92,246,0.08)' : 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
-        color: '#fff', border: 'none',
+        background: disabled ? 'rgba(201,168,76,0.02)' : 'linear-gradient(145deg, #221809 0%, #15110A 100%)',
+        color: disabled ? 'rgba(201,168,76,0.18)' : '#C9A84C',
+        border: disabled ? '1px solid rgba(201,168,76,0.06)' : '1px solid rgba(201,168,76,0.3)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, transition: 'background 0.15s',
+        flexShrink: 0, transition: 'background 0.2s',
       }}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
@@ -497,11 +521,13 @@ function Thinking({ isMobile }) {
     <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap: g, alignItems: 'flex-start' }}>
       <GPTAvatar />
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 7,
-        background: 'rgba(139,92,246,0.06)',
-        border: '1px solid rgba(139,92,246,0.18)',
-        borderRadius: 14, padding: '10px 18px',
-        backdropFilter: 'blur(8px)',
+        display: 'flex', alignItems: 'center', gap: 5,
+        background: 'rgba(20,14,8,0.9)',
+        border: '1px solid rgba(201,168,76,0.1)',
+        borderTop: '1px solid rgba(215,178,80,0.2)',
+        borderRadius: '3px 14px 14px 14px', padding: '10px 18px',
+        backdropFilter: 'blur(12px)',
+        boxShadow: '0 2px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.05)',
       }}>
         <span className="dot" /><span className="dot" /><span className="dot" />
       </div>
@@ -520,13 +546,13 @@ function ServiceChip({ label, sub, icon, onClick, isMobile }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
         padding: isMobile ? '14px 18px' : '14px 20px',
-        borderRadius: 14, border: '1px solid',
-        borderColor: hov ? 'transparent' : 'rgba(139,92,246,0.22)',
-        background: hov ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.07)',
-        color: '#F1F5F9',
+        borderRadius: 12, border: '1px solid',
+        borderColor: hov ? 'rgba(180,140,60,0.3)' : 'rgba(255,255,255,0.07)',
+        background: hov ? 'rgba(30,22,8,0.9)' : 'rgba(255,255,255,0.025)',
+        color: hov ? '#E8D5A0' : '#887858',
         cursor: 'pointer', textAlign: 'left',
-        boxShadow: hov ? '0 0 40px rgba(139,92,246,0.55), 0 0 80px rgba(139,92,246,0.2), 0 8px 24px rgba(0,0,0,0.5)' : '0 2px 8px rgba(0,0,0,0.4)',
-        transition: 'all 0.15s ease',
+        boxShadow: hov ? '0 4px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(180,140,60,0.12)' : '0 2px 8px rgba(0,0,0,0.3)',
+        transition: 'all 0.2s ease',
         width: isMobile ? '100%' : 'auto',
         minWidth: isMobile ? 0 : 180,
       }}
@@ -551,27 +577,27 @@ function ServiceMenuItem({ label, sub, icon, onClick, isLast }) {
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
         width: '100%', padding: '13px 18px',
-        background: hov ? 'rgba(139,92,246,0.08)' : 'transparent',
-        border: 'none', borderBottom: isLast ? 'none' : '1px solid rgba(139,92,246,0.1)',
+        background: hov ? 'rgba(255,255,255,0.04)' : 'transparent',
+        border: 'none', borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.05)',
         cursor: 'pointer', textAlign: 'left',
-        transition: 'background 0.1s',
+        transition: 'background 0.15s',
       }}
     >
       <div style={{
         width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-        background: hov ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.1)',
+        background: hov ? 'rgba(50,35,10,0.9)' : 'rgba(255,255,255,0.04)',
+        border: `1px solid ${hov ? 'rgba(180,140,60,0.35)' : 'rgba(255,255,255,0.06)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#fff',
-        boxShadow: hov ? '0 0 20px rgba(139,92,246,0.6), 0 0 40px rgba(139,92,246,0.2)' : 'none',
-        transition: 'background 0.15s, color 0.15s, box-shadow 0.15s',
+        color: hov ? '#E0C880' : '#606878',
+        transition: 'background 0.15s, color 0.15s, border-color 0.15s',
       }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9' }}>{label}</div>
-        <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>{sub}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: '#F2EDD4' }}>{label}</div>
+        <div style={{ fontSize: 12, color: '#706050', marginTop: 1 }}>{sub}</div>
       </div>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hov ? '#A78BFA' : 'rgba(255,255,255,0.2)'} strokeWidth={2.5}
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={hov ? '#A08840' : 'rgba(255,255,255,0.15)'} strokeWidth={2.5}
         style={{ marginLeft: 'auto', flexShrink: 0, transition: 'stroke 0.15s' }}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6" />
       </svg>
@@ -598,14 +624,23 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
     return (
       <div className="msg-user" style={{ padding: `6px ${px}px`, display: 'flex', justifyContent: 'flex-end' }}>
         <div style={{
-          background: 'linear-gradient(135deg, rgba(139,92,246,0.92) 0%, rgba(79,70,229,0.96) 55%, rgba(14,165,233,0.92) 100%)',
-          color: '#ffffff', borderRadius: '18px 18px 4px 18px',
+          position: 'relative',
+          background: 'rgba(15,10,6,0.97)',
+          border: '1px solid rgba(201,168,76,0.15)',
+          borderRight: '2px solid rgba(215,178,80,0.4)',
+          color: '#E8D5A8',
+          borderRadius: '14px 3px 14px 14px',
           padding: '10px 16px', maxWidth: '78%', fontSize: 15,
-          lineHeight: 1.65, whiteSpace: 'pre-wrap',
-          boxShadow: '0 0 18px rgba(139,92,246,0.5), 0 4px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          backdropFilter: 'blur(8px)',
+          lineHeight: 1.72, whiteSpace: 'pre-wrap', letterSpacing: '0.025em',
+          boxShadow: '0 0 18px rgba(201,168,76,0.07), 0 4px 24px rgba(0,0,0,0.65)',
+          textShadow: '0 0 14px rgba(201,168,76,0.08)',
         }}>
+          <div className="user-bubble-laser" style={{
+            position: 'absolute', top: 6, bottom: 6, right: -2,
+            width: 2, borderRadius: 2,
+            background: 'linear-gradient(180deg, transparent, rgba(215,178,80,0.8), transparent)',
+            pointerEvents: 'none',
+          }} />
           {display}
         </div>
       </div>
@@ -629,7 +664,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <SearchForm prefill={prefill} onSubmit={onSearchFormSubmit} done={searchFormDone} />
         </div>
       </div>
@@ -660,7 +695,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
         </div>
       </div>
@@ -676,7 +711,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <FlightSearchForm prefill={prefill} onSubmit={onFlightSearchSubmit} done={flightSearchDone} />
         </div>
       </div>
@@ -698,7 +733,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <FlightPassengerForm onSubmit={onFlightGuestSubmit} done={flightGuestDone} passengerCount={flightPassengerCount || 1} />
         </div>
       </div>
@@ -732,7 +767,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <TransferSearchForm prefill={prefill} onSubmit={onTransferSearchSubmit} done={transferSearchFormDone} />
         </div>
       </div>
@@ -763,7 +798,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
       <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
         <GPTAvatar />
         <div style={{ flex: 1 }}>
-          {textBefore && <p style={{ margin: '0 0 12px', color: '#94A3B8', fontSize: 14 }}>{textBefore}</p>}
+          {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
           <TransferGuestForm onSubmit={onTransferGuestSubmit} done={transferGuestDone} />
         </div>
       </div>
@@ -790,8 +825,19 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
   return (
     <div className="msg-bot" style={{ padding: `12px ${px}px`, display: 'flex', gap, alignItems: 'flex-start' }}>
       <GPTAvatar />
-      <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.75, color: '#E2E8F0', paddingTop: 3, flex: 1, minWidth: 0 }}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+      <div className="bot-scanlines" style={{
+        flex: 1, minWidth: 0, position: 'relative',
+        background: 'rgba(18,13,8,0.92)',
+        borderRadius: '3px 14px 14px 14px',
+        border: '1px solid rgba(201,168,76,0.08)',
+        borderTop: '1px solid rgba(215,178,80,0.18)',
+        boxShadow: '0 2px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(201,168,76,0.04)',
+        padding: '12px 16px',
+        overflow: 'hidden',
+      }}>
+        <div className="prose-msg" style={{ fontSize: 15, lineHeight: 1.78, minWidth: 0, position: 'relative', zIndex: 2 }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+        </div>
       </div>
     </div>
   );
@@ -827,7 +873,7 @@ function PhotoCarousel({ urls, name }) {
   if (valid.length === 0) {
     return (
       <div style={{
-        width: '100%', height: 110, background: 'rgba(139,92,246,0.05)',
+        width: '100%', height: 110, background: 'rgba(255,255,255,0.03)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth={1.5}>
@@ -843,7 +889,7 @@ function PhotoCarousel({ urls, name }) {
     <div
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
-      style={{ position: 'relative', width: '100%', height: 160, background: 'rgba(139,92,246,0.05)', overflow: 'hidden' }}
+      style={{ position: 'relative', width: '100%', height: 160, background: 'rgba(255,255,255,0.03)', overflow: 'hidden' }}
     >
       <img
         key={valid[clampedIdx]}
@@ -931,7 +977,7 @@ function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
       onClick={() => onSelect(hotel)}
       onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onSelect(hotel); }}
       style={{
-        background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)',
+        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 14, marginBottom: 10,
         cursor: 'pointer', textAlign: 'left', width: '100%',
         boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
@@ -940,24 +986,24 @@ function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
         transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.2s',
         WebkitTapHighlightColor: 'transparent',
       }}
-      onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.7)'; e.currentTarget.style.boxShadow = '0 0 0 1px rgba(139,92,246,0.5), 0 16px 48px rgba(139,92,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1)'; e.currentTarget.style.transform = 'translateY(-3px)'; }}}
-      onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.2)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'translateY(0)'; }}}
+      onMouseEnter={e => { if (!isMobile) { e.currentTarget.style.borderColor = 'rgba(180,140,60,0.25)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}}
+      onMouseLeave={e => { if (!isMobile) { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.boxShadow = '0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(0)'; }}}
     >
       <PhotoCarousel urls={imageUrls} name={hotel.name} />
 
       <div style={{ padding: isMobile ? '10px 12px' : '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
           <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#F1F5F9', lineHeight: 1.3 }}>{hotel.name}</div>
+            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#F2EDD4', lineHeight: 1.3 }}>{hotel.name}</div>
             {hotel.categoryName && (
-              <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{hotel.categoryName}</div>
+              <div style={{ fontSize: 11, color: '#9A8868', marginTop: 2 }}>{hotel.categoryName}</div>
             )}
           </div>
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: '#F1F5F9' }}>
+            <div style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: '#F2EDD4' }}>
               {hotel.currency} {fmt(hotel.minRate)}
             </div>
-            <div style={{ fontSize: 11, color: '#64748B' }}>per night</div>
+            <div style={{ fontSize: 11, color: '#706050' }}>per night</div>
           </div>
         </div>
 
@@ -965,8 +1011,8 @@ function HotelCard({ hotel, imageUrls, onSelect, isMobile }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
             {hotel.facilities.map((f, i) => (
               <span key={i} style={{
-                fontSize: 11, color: '#C4B5FD', background: 'rgba(139,92,246,0.14)',
-                border: '1px solid rgba(139,92,246,0.3)',
+                fontSize: 11, color: '#907840', background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 6, padding: '3px 7px',
               }}>{f}</span>
             ))}
@@ -1016,12 +1062,12 @@ function HotelList({ hotels, onSelect, done, isMobile }) {
 
   const SectionHeader = ({ label, low, high }) => (
     <div style={{
-      fontSize: 11, fontWeight: 600, color: '#64748B',
+      fontSize: 11, fontWeight: 600, color: '#706050',
       textTransform: 'uppercase', letterSpacing: '0.5px',
       marginBottom: 8, marginTop: 4,
     }}>
       {label}
-      <span style={{ fontWeight: 400, color: '#475569', marginLeft: 6 }}>
+      <span style={{ fontWeight: 400, color: '#5A4A38', marginLeft: 6 }}>
         {cur} {fmt(low)} – {fmt(high)} / night
       </span>
     </div>
@@ -1029,7 +1075,7 @@ function HotelList({ hotels, onSelect, done, isMobile }) {
 
   return (
     <div style={{ width: '100%', maxWidth: isMobile ? '100%' : 520 }}>
-      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#E2E8F0' }}>
+      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#E8D5A8' }}>
         Here are the available hotels. Tap one to select:
       </p>
 
@@ -1126,36 +1172,36 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
 
   const inputStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.06)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     letterSpacing: '0.05em', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form
       onSubmit={handlePay}
       style={{
-        background: 'rgba(139,92,246,0.06)',
+        background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(139,92,246,0.22)',
-        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 14, padding: '20px', width: '100%', maxWidth: 340,
         boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
       }}
     >
-      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Payment Details
       </p>
-      <p style={{ margin: '0 0 14px', fontSize: 13, color: '#94A3B8' }}>{data.hotelName}</p>
+      <p style={{ margin: '0 0 14px', fontSize: 13, color: '#9A8868' }}>{data.hotelName}</p>
 
       <div style={{
-        background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)',
+        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
         borderRadius: 10, padding: '10px 14px',
         display: 'flex', justifyContent: 'space-between', marginBottom: 16,
       }}>
-        <span style={{ fontSize: 13, color: '#94A3B8' }}>Total</span>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#F1F5F9' }}>
+        <span style={{ fontSize: 13, color: '#9A8868' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#F2EDD4' }}>
           {data.currency} {Number(data.amount).toLocaleString('en-IN')}
         </span>
       </div>
@@ -1166,8 +1212,8 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
           type="text" value={cardNum} placeholder="1234 5678 9012 3456"
           onChange={e => setCardNum(fmtCard(e.target.value))}
           style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
         />
       </label>
 
@@ -1178,8 +1224,8 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
             type="text" value={expiry} placeholder="MM/YY"
             onChange={e => setExpiry(fmtExpiry(e.target.value))}
             style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
@@ -1188,8 +1234,8 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
             type="text" value={cvv} placeholder="123" maxLength={4}
             onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
             style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
       </div>
@@ -1204,11 +1250,11 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
         style={{
           width: '100%', padding: '11px', marginTop: 4,
           borderRadius: 10, border: 'none',
-          background: (!valid || paying) ? 'rgba(139,92,246,0.08)' : 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
-          color: (!valid || paying) ? '#3D4A63' : '#fff', fontSize: 14, fontWeight: 600,
+          background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+          color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
           cursor: (!valid || paying) ? 'not-allowed' : 'pointer',
           transition: 'background 0.15s',
-          boxShadow: (!valid || paying) ? 'none' : '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)',
+          boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
         }}
       >
         {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
@@ -1220,18 +1266,18 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
 /* ── BookingConfirmed ────────────────────────────────── */
 function BookingConfirmed({ data }) {
   const row = (label, value) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(139,92,246,0.12)' }}>
-      <span style={{ fontSize: 13, color: '#94A3B8' }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: '#F1F5F9', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <span style={{ fontSize: 13, color: '#9A8868' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#F2EDD4', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
     </div>
   );
   return (
     <div style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 16px 56px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <div style={{
@@ -1292,25 +1338,25 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
 
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   };
   const labelStyle = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form
       onSubmit={handleSubmit}
       style={{
-        background: 'rgba(139,92,246,0.06)',
+        background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(139,92,246,0.22)',
-        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 14, padding: '20px', width: '100%', maxWidth: 340,
         boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
       }}
     >
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Where do you want to stay?
       </p>
 
@@ -1321,8 +1367,8 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
           onChange={e => setDestination(e.target.value)}
           placeholder="e.g. Goa, Paris, Bali"
           style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
         />
       </label>
 
@@ -1333,8 +1379,8 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
             type="date" value={checkin} required min={today}
             onChange={e => setCheckin(e.target.value)}
             style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
@@ -1343,8 +1389,8 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
             type="date" value={checkout} required min={checkin || today}
             onChange={e => setCheckout(e.target.value)}
             style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
       </div>
@@ -1361,10 +1407,10 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
           onBlur={e => {
             const n = Math.max(1, parseInt(e.target.value, 10) || 1);
             setAdultsStr(String(n));
-            e.target.style.borderColor = 'rgba(139,92,246,0.22)';
+            e.target.style.borderColor = 'rgba(255,255,255,0.1)';
           }}
           style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
         />
       </label>
 
@@ -1374,11 +1420,11 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
         style={{
           width: '100%', padding: '11px',
           borderRadius: 10, border: 'none',
-          background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-          color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+          background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+          color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
           cursor: valid ? 'pointer' : 'not-allowed',
           transition: 'background 0.15s',
-          boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+          boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
         Search Hotels
@@ -1419,29 +1465,29 @@ function GuestDetailsForm({ onSubmit, done }) {
 
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   };
   const labelStyle = {
     display: 'block', marginBottom: 12,
   };
   const labelTextStyle = {
-    display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5,
+    display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5,
   };
 
   return (
     <form
       onSubmit={handleSubmit}
       style={{
-        background: 'rgba(139,92,246,0.06)',
+        background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(139,92,246,0.22)',
-        borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 14, padding: '20px', width: '100%', maxWidth: 340,
         boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
       }}
     >
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Enter your booking details
       </p>
 
@@ -1453,8 +1499,8 @@ function GuestDetailsForm({ onSubmit, done }) {
             onChange={e => setFirstName(e.target.value)}
             placeholder="Rahul"
             style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
@@ -1464,8 +1510,8 @@ function GuestDetailsForm({ onSubmit, done }) {
             onChange={e => setLastName(e.target.value)}
             placeholder="Sharma"
             style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
           />
         </label>
       </div>
@@ -1477,8 +1523,8 @@ function GuestDetailsForm({ onSubmit, done }) {
           onChange={e => setEmail(e.target.value)}
           placeholder="rahul@example.com"
           style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
         />
       </label>
 
@@ -1489,8 +1535,8 @@ function GuestDetailsForm({ onSubmit, done }) {
           onChange={e => setPhone(e.target.value)}
           placeholder="9834725737"
           style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
         />
       </label>
 
@@ -1500,11 +1546,11 @@ function GuestDetailsForm({ onSubmit, done }) {
         style={{
           width: '100%', padding: '11px',
           borderRadius: 10, border: 'none',
-          background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-          color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+          background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+          color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
           cursor: valid ? 'pointer' : 'not-allowed',
           transition: 'background 0.15s',
-          boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+          boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
         Confirm Booking
@@ -1553,22 +1599,22 @@ function FlightSearchForm({ prefill = {}, onSubmit, done }) {
 
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 16px 56px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
-      <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Search Flights
       </p>
 
@@ -1577,9 +1623,9 @@ function FlightSearchForm({ prefill = {}, onSubmit, done }) {
         {['one', 'round'].map(t => (
           <button key={t} type="button" onClick={() => setTripType(t)} style={{
             flex: 1, padding: '7px', borderRadius: 8, border: '1px solid',
-            borderColor: tripType === t ? 'transparent' : 'rgba(139,92,246,0.22)',
-            background: tripType === t ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-            color: tripType === t ? '#fff' : '#94A3B8',
+            borderColor: tripType === t ? 'transparent' : 'rgba(255,255,255,0.1)',
+            background: tripType === t ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+            color: tripType === t ? '#E0C878' : '#6A5A38',
             fontSize: 13, fontWeight: 500, cursor: 'pointer',
           }}>
             {t === 'one' ? 'One-way' : 'Round-trip'}
@@ -1591,12 +1637,12 @@ function FlightSearchForm({ prefill = {}, onSubmit, done }) {
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>From</span>
           <input type="text" value={from} required placeholder="Mumbai" onChange={e => setFrom(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>To</span>
           <input type="text" value={to} required placeholder="Dubai" onChange={e => setTo(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
       </div>
 
@@ -1604,13 +1650,13 @@ function FlightSearchForm({ prefill = {}, onSubmit, done }) {
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Departure</span>
           <input type="date" value={departure} required min={today} onChange={e => setDeparture(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         {tripType === 'round' && (
           <label style={{ ...labelStyle, flex: 1 }}>
             <span style={labelTextStyle}>Return</span>
             <input type="date" value={returnDate} min={departure || today} onChange={e => setReturn(e.target.value)} style={fieldStyle}
-              onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+              onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
           </label>
         )}
       </div>
@@ -1619,26 +1665,26 @@ function FlightSearchForm({ prefill = {}, onSubmit, done }) {
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Passengers</span>
           <input type="number" value={passengers} min={1} max={9} required onChange={e => setPassengers(e.target.value)}
-            onBlur={e => { const n = Math.min(9, Math.max(1, parseInt(e.target.value) || 1)); setPassengers(String(n)); e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
-            style={fieldStyle} onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} />
+            onBlur={e => { const n = Math.min(9, Math.max(1, parseInt(e.target.value) || 1)); setPassengers(String(n)); e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+            style={fieldStyle} onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Cabin</span>
           <select value={cabin} onChange={e => setCabin(e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
-            <option value="economy">Economy</option>
-            <option value="premium_economy">Premium Economy</option>
-            <option value="business">Business</option>
-            <option value="first">First</option>
+            <option value="economy" style={{ background: '#150F06', color: '#F2EDD4' }}>Economy</option>
+            <option value="premium_economy" style={{ background: '#150F06', color: '#F2EDD4' }}>Premium Economy</option>
+            <option value="business" style={{ background: '#150F06', color: '#F2EDD4' }}>Business</option>
+            <option value="first" style={{ background: '#150F06', color: '#F2EDD4' }}>First</option>
           </select>
         </label>
       </div>
 
       <button type="submit" disabled={!valid} style={{
         width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
-        background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-        color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+        background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+        color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
         cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
-        boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+        boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
       }}>
         Search Flights
       </button>
@@ -1664,11 +1710,11 @@ function FlightCard({ flight, onSelect, done }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: 'rgba(139,92,246,0.06)', border: `1px solid ${hov && !done ? 'rgba(139,92,246,0.7)' : 'rgba(139,92,246,0.2)'}`,
+        background: 'rgba(255,255,255,0.03)', border: `1px solid ${hov && !done ? 'rgba(180,140,60,0.3)' : 'rgba(255,255,255,0.07)'}`,
         borderRadius: 12, padding: '14px 16px', cursor: done ? 'default' : 'pointer',
         transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.2s',
         backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: hov && !done ? '0 0 0 1px rgba(139,92,246,0.5), 0 16px 48px rgba(139,92,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' : '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+        boxShadow: hov && !done ? '0 8px 32px rgba(0,0,0,0.55)' : '0 8px 40px rgba(0,0,0,0.4)',
         transform: hov && !done ? 'translateY(-3px)' : 'translateY(0)',
       }}
     >
@@ -1683,9 +1729,9 @@ function FlightCard({ flight, onSelect, done }) {
               onError={e => { e.target.style.display = 'none'; }}
             />
           )}
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#F1F5F9' }}>{flight.airline}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#F2EDD4' }}>{flight.airline}</span>
         </div>
-        <span style={{ fontSize: 11, color: '#C4B5FD', background: 'rgba(139,92,246,0.14)', borderRadius: 6, padding: '2px 8px' }}>
+        <span style={{ fontSize: 11, color: '#907840', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 8px' }}>
           {cabinLabel}
         </span>
       </div>
@@ -1693,35 +1739,35 @@ function FlightCard({ flight, onSelect, done }) {
       {/* Route + times */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
         <div style={{ textAlign: 'center', minWidth: 44 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#F1F5F9' }}>{flight.departure.time}</div>
-          <div style={{ fontSize: 11, color: '#94A3B8' }}>{flight.origin}</div>
-          <div style={{ fontSize: 11, color: '#64748B' }}>{flight.departure.date}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#F2EDD4' }}>{flight.departure.time}</div>
+          <div style={{ fontSize: 11, color: '#9A8868' }}>{flight.origin}</div>
+          <div style={{ fontSize: 11, color: '#706050' }}>{flight.departure.date}</div>
         </div>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-          <div style={{ fontSize: 11, color: '#94A3B8' }}>{flight.duration}</div>
+          <div style={{ fontSize: 11, color: '#9A8868' }}>{flight.duration}</div>
           <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 4 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(139,92,246,0.2)' }} />
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(139,92,246,0.5)" strokeWidth={1.5}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(130,110,200,0.4)" strokeWidth={1.5}>
               <path d="M5 12h14M12 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <div style={{ fontSize: 11, color: flight.stops === 0 ? '#16a34a' : '#d97706', fontWeight: 500 }}>{stops}</div>
         </div>
         <div style={{ textAlign: 'center', minWidth: 44 }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#F1F5F9' }}>{flight.arrival.time}</div>
-          <div style={{ fontSize: 11, color: '#94A3B8' }}>{flight.destination}</div>
-          <div style={{ fontSize: 11, color: '#64748B' }}>{flight.arrival.date}</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#F2EDD4' }}>{flight.arrival.time}</div>
+          <div style={{ fontSize: 11, color: '#9A8868' }}>{flight.destination}</div>
+          <div style={{ fontSize: 11, color: '#706050' }}>{flight.arrival.date}</div>
         </div>
-        <div style={{ marginLeft: 'auto', textAlign: 'right', paddingLeft: 12, borderLeft: '1px solid rgba(139,92,246,0.15)' }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
+        <div style={{ marginLeft: 'auto', textAlign: 'right', paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#F2EDD4' }}>
             {Number(flight.amount).toLocaleString('en-IN')}
           </div>
-          <div style={{ fontSize: 11, color: '#94A3B8' }}>{flight.currency}</div>
+          <div style={{ fontSize: 11, color: '#9A8868' }}>{flight.currency}</div>
         </div>
       </div>
 
       {!done && (
-        <div style={{ fontSize: 12, color: hov ? '#A78BFA' : '#475569', textAlign: 'right', marginTop: 4, fontWeight: hov ? 600 : 400 }}>
+        <div style={{ fontSize: 12, color: hov ? '#A08840' : '#5A4A38', textAlign: 'right', marginTop: 4, fontWeight: hov ? 600 : 400 }}>
           {hov ? 'Click to select →' : 'Select'}
         </div>
       )}
@@ -1732,7 +1778,7 @@ function FlightCard({ flight, onSelect, done }) {
 function FlightList({ flights, onSelect, done }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 480 }}>
-      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8' }}>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>
         {flights.length} flight{flights.length !== 1 ? 's' : ''} found — sorted by price
       </p>
       {flights.map((f, i) => (
@@ -1746,21 +1792,21 @@ function FlightList({ flights, onSelect, done }) {
 function PassengerSection({ index, total, data, onChange }) {
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box', transition: 'border-color 0.15s',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
   const set = (field, val) => onChange(index, field, val);
 
   return (
     <div style={{
-      border: '1px solid rgba(139,92,246,0.15)', borderRadius: 12, padding: '16px',
-      background: 'rgba(139,92,246,0.04)',
+      border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px',
+      background: 'rgba(255,255,255,0.02)',
       marginBottom: total > 1 ? 16 : 0,
     }}>
       {total > 1 && (
-        <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 13, color: '#A78BFA', letterSpacing: '0.2px' }}>
+        <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 13, color: '#A08840', letterSpacing: '0.2px' }}>
           Passenger {index + 1}
         </p>
       )}
@@ -1770,21 +1816,21 @@ function PassengerSection({ index, total, data, onChange }) {
           <span style={labelTextStyle}>Title</span>
           <select value={data.title} onChange={e => { set('title', e.target.value); set('gender', ['ms', 'mrs', 'miss'].includes(e.target.value) ? 'f' : 'm'); }}
             style={{ ...fieldStyle, cursor: 'pointer', padding: '9px 8px' }}>
-            <option value="mr">Mr</option>
-            <option value="mrs">Mrs</option>
-            <option value="ms">Ms</option>
-            <option value="miss">Miss</option>
+            <option value="mr" style={{ background: '#150F06', color: '#F2EDD4' }}>Mr</option>
+            <option value="mrs" style={{ background: '#150F06', color: '#F2EDD4' }}>Mrs</option>
+            <option value="ms" style={{ background: '#150F06', color: '#F2EDD4' }}>Ms</option>
+            <option value="miss" style={{ background: '#150F06', color: '#F2EDD4' }}>Miss</option>
           </select>
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>First Name</span>
           <input type="text" value={data.firstName} required placeholder="Rahul" onChange={e => set('firstName', e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Last Name</span>
           <input type="text" value={data.lastName} required placeholder="Sharma" onChange={e => set('lastName', e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
       </div>
 
@@ -1792,13 +1838,13 @@ function PassengerSection({ index, total, data, onChange }) {
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Date of Birth</span>
           <input type="date" value={data.dob} required max={new Date().toISOString().split('T')[0]} onChange={e => set('dob', e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, width: 110 }}>
           <span style={labelTextStyle}>Gender</span>
           <select value={data.gender} onChange={e => set('gender', e.target.value)} style={{ ...fieldStyle, cursor: 'pointer' }}>
-            <option value="m">Male</option>
-            <option value="f">Female</option>
+            <option value="m" style={{ background: '#150F06', color: '#F2EDD4' }}>Male</option>
+            <option value="f" style={{ background: '#150F06', color: '#F2EDD4' }}>Female</option>
           </select>
         </label>
       </div>
@@ -1806,13 +1852,13 @@ function PassengerSection({ index, total, data, onChange }) {
       <label style={labelStyle}>
         <span style={labelTextStyle}>Email Address</span>
         <input type="email" value={data.email} required placeholder="rahul@example.com" onChange={e => set('email', e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <label style={{ ...labelStyle, marginBottom: 0 }}>
         <span style={labelTextStyle}>Phone Number (with country code)</span>
         <input type="tel" value={data.phone} required placeholder="+919834725737" onChange={e => set('phone', e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
     </div>
   );
@@ -1856,13 +1902,13 @@ function FlightPassengerForm({ onSubmit, done, passengerCount = 1 }) {
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 400,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Passenger Details
       </p>
 
@@ -1872,10 +1918,10 @@ function FlightPassengerForm({ onSubmit, done, passengerCount = 1 }) {
 
       <button type="submit" disabled={!valid} style={{
         width: '100%', marginTop: 16, padding: '11px', borderRadius: 10, border: 'none',
-        background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-        color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+        background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+        color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
         cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
-        boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+        boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
       }}>
         {passengerCount > 1 ? `Confirm ${passengerCount} Passengers` : 'Confirm Passenger'}
       </button>
@@ -1958,28 +2004,28 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
 
   const inputStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.06)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     letterSpacing: '0.05em', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form onSubmit={handlePay} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>Payment Details</p>
-      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8' }}>{data.airline} · {data.route}</p>
-      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#64748B' }}>{data.departureDate}</p>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>{data.airline} · {data.route}</p>
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#706050' }}>{data.departureDate}</p>
 
-      <div style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ fontSize: 13, color: '#94A3B8' }}>Total</span>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#F1F5F9' }}>
+      <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, color: '#9A8868' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#F2EDD4' }}>
           {data.currency} {Number(data.amount).toLocaleString('en-IN')}
         </span>
       </div>
@@ -1988,7 +2034,7 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
         <span style={labelTextStyle}>Card Number</span>
         <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
           onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <div style={{ display: 'flex', gap: 10 }}>
@@ -1996,14 +2042,14 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
           <span style={labelTextStyle}>Expiry</span>
           <input type="text" value={expiry} placeholder="MM/YY"
             onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>CVV</span>
           <input type="text" value={cvv} placeholder="123" maxLength={4}
             onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
             style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
       </div>
 
@@ -2011,10 +2057,10 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
 
       <button type="submit" disabled={!valid || paying} style={{
         width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
-        background: (!valid || paying) ? 'rgba(139,92,246,0.08)' : 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
-        color: (!valid || paying) ? '#3D4A63' : '#fff', fontSize: 14, fontWeight: 600,
+        background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+        color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
         cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
-        boxShadow: (!valid || paying) ? 'none' : '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)',
+        boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
       }}>
         {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
       </button>
@@ -2025,18 +2071,18 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
 /* ── Flight Booking Confirmed ────────────────────────── */
 function FlightBookingConfirmed({ data }) {
   const row = (label, value) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(139,92,246,0.12)' }}>
-      <span style={{ fontSize: 13, color: '#94A3B8' }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: '#F1F5F9', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <span style={{ fontSize: 13, color: '#9A8868' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#F2EDD4', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
     </div>
   );
   return (
     <div style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 16px 56px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <div style={{
@@ -2149,21 +2195,21 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
 
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box', transition: 'border-color 0.15s',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Book a Transfer
       </p>
 
@@ -2174,9 +2220,9 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
           {LOCATION_TYPES.map(lt => (
             <button key={lt.value} type="button" onClick={() => setFromType(lt.value)} style={{
               padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              border: fromType === lt.value ? '1.5px solid transparent' : '1.5px solid rgba(139,92,246,0.25)',
-              background: fromType === lt.value ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.07)',
-              color: fromType === lt.value ? '#fff' : '#94A3B8',
+              border: fromType === lt.value ? '1.5px solid rgba(180,140,60,0.3)' : '1.5px solid rgba(255,255,255,0.07)',
+              background: fromType === lt.value ? 'rgba(40,28,10,0.8)' : 'rgba(255,255,255,0.03)',
+              color: fromType === lt.value ? '#E0C880' : '#6A5A38',
               transition: 'all 0.15s',
             }}>{lt.label}</button>
           ))}
@@ -2184,7 +2230,7 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
         <input type="text" value={from} required
           placeholder={(LOCATION_TYPES.find(l => l.value === fromType) || LOCATION_TYPES[0]).placeholder}
           onChange={e => setFrom(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </div>
 
       {/* TO */}
@@ -2194,9 +2240,9 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
           {LOCATION_TYPES.map(lt => (
             <button key={lt.value} type="button" onClick={() => setToType(lt.value)} style={{
               padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, cursor: 'pointer',
-              border: toType === lt.value ? '1.5px solid transparent' : '1.5px solid rgba(139,92,246,0.25)',
-              background: toType === lt.value ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.07)',
-              color: toType === lt.value ? '#fff' : '#94A3B8',
+              border: toType === lt.value ? '1.5px solid rgba(180,140,60,0.3)' : '1.5px solid rgba(255,255,255,0.07)',
+              background: toType === lt.value ? 'rgba(40,28,10,0.8)' : 'rgba(255,255,255,0.03)',
+              color: toType === lt.value ? '#E0C880' : '#6A5A38',
               transition: 'all 0.15s',
             }}>{lt.label}</button>
           ))}
@@ -2204,21 +2250,21 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
         <input type="text" value={to} required
           placeholder={(LOCATION_TYPES.find(l => l.value === toType) || LOCATION_TYPES[1]).placeholder}
           onChange={e => setTo(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </div>
 
       <label style={labelStyle}>
         <span style={labelTextStyle}>Date</span>
         <input type="date" value={date} required min={today}
           onChange={e => setDate(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <div style={{ marginBottom: 18 }}>
         <span style={labelTextStyle}>Pickup Time</span>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.18)',
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: 10, padding: '6px 12px', gap: 4,
         }}>
           {(() => {
@@ -2242,15 +2288,15 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
               <>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                   <button type="button" onClick={incrHour} style={spinBtn}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#E0C880'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.background = 'none'; }}>
                     <ChevUp />
                   </button>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#F2EDD4', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
                     {String(hour).padStart(2, '0')}
                   </span>
                   <button type="button" onClick={decrHour} style={spinBtn}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#E0C880'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.background = 'none'; }}>
                     <ChevDown />
                   </button>
@@ -2260,30 +2306,30 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
                   <button type="button" onClick={incrMinute} style={spinBtn}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#E0C880'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.background = 'none'; }}>
                     <ChevUp />
                   </button>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: '#F2EDD4', minWidth: 28, textAlign: 'center', lineHeight: 1.2, letterSpacing: '-0.3px' }}>
                     {minute}
                   </span>
                   <button type="button" onClick={decrMinute} style={spinBtn}
-                    onMouseEnter={e => { e.currentTarget.style.color = '#C4B5FD'; e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#E0C880'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
                     onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.background = 'none'; }}>
                     <ChevDown />
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 4, borderRadius: 7, overflow: 'hidden', border: '1px solid rgba(139,92,246,0.22)', flexShrink: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', marginLeft: 4, borderRadius: 7, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
                   {['AM', 'PM'].map(p => (
                     <button key={p} type="button" onClick={() => setPeriod(p)} style={{
                       border: 'none', padding: '5px 9px',
-                      background: period === p ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.06)',
-                      color: period === p ? '#fff' : '#64748B',
+                      background: period === p ? 'rgba(40,28,10,0.8)' : 'rgba(255,255,255,0.03)',
+                      color: period === p ? '#E0C880' : '#706050',
                       fontSize: 10, fontWeight: 700, cursor: 'pointer',
                       transition: 'background 0.15s, color 0.15s',
                       letterSpacing: '0.04em',
-                      borderBottom: p === 'AM' ? '1px solid rgba(139,92,246,0.2)' : 'none',
+                      borderBottom: p === 'AM' ? '1px solid rgba(255,255,255,0.07)' : 'none',
                     }}>
                       {p}
                     </button>
@@ -2299,16 +2345,16 @@ function TransferSearchForm({ prefill = {}, onSubmit, done }) {
         <span style={labelTextStyle}>Passengers</span>
         <input type="number" value={adultsStr} min={1} required
           onChange={e => setAdultsStr(e.target.value)}
-          onBlur={e => { const n = Math.max(1, parseInt(e.target.value, 10) || 1); setAdultsStr(String(n)); e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }}
-          style={fieldStyle} onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} />
+          onBlur={e => { const n = Math.max(1, parseInt(e.target.value, 10) || 1); setAdultsStr(String(n)); e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+          style={fieldStyle} onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} />
       </label>
 
       <button type="submit" disabled={!valid} style={{
         width: '100%', padding: '11px', borderRadius: 10, border: 'none',
-        background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-        color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+        background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+        color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
         cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
-        boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+        boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
       }}>
         Search Transfers
       </button>
@@ -2326,11 +2372,11 @@ function TransferCard({ transfer, onSelect, done, isMobile }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: 'rgba(139,92,246,0.06)', border: `1px solid ${hov && !done ? 'rgba(139,92,246,0.7)' : 'rgba(139,92,246,0.2)'}`,
+        background: 'rgba(255,255,255,0.03)', border: `1px solid ${hov && !done ? 'rgba(180,140,60,0.3)' : 'rgba(255,255,255,0.07)'}`,
         borderRadius: 14, cursor: done ? 'default' : 'pointer',
         overflow: 'hidden', marginBottom: 10,
         backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-        boxShadow: hov && !done ? '0 0 0 1px rgba(139,92,246,0.5), 0 16px 48px rgba(139,92,246,0.3), inset 0 1px 0 rgba(255,255,255,0.1)' : '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.07)',
+        boxShadow: hov && !done ? '0 8px 32px rgba(0,0,0,0.55)' : '0 8px 40px rgba(0,0,0,0.4)',
         transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.2s',
         WebkitTapHighlightColor: 'transparent',
         transform: hov && !done ? 'translateY(-3px)' : 'translateY(0)',
@@ -2344,12 +2390,12 @@ function TransferCard({ transfer, onSelect, done, isMobile }) {
       <div style={{ padding: isMobile ? '10px 12px' : '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
-            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#F1F5F9', lineHeight: 1.3 }}>{transfer.type}</div>
-            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 2 }}>{transfer.vehicle}</div>
+            <div style={{ fontWeight: 600, fontSize: isMobile ? 13 : 14, color: '#F2EDD4', lineHeight: 1.3 }}>{transfer.type}</div>
+            <div style={{ fontSize: 12, color: '#9A8868', marginTop: 2 }}>{transfer.vehicle}</div>
           </div>
           {transfer.price > 0 && (
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#F1F5F9' }}>
+              <div style={{ fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#F2EDD4' }}>
                 {transfer.currency} {fmt(transfer.price)}
               </div>
             </div>
@@ -2357,18 +2403,18 @@ function TransferCard({ transfer, onSelect, done, isMobile }) {
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
           {transfer.maxPax > 0 && (
-            <span style={{ fontSize: 11, color: '#C4B5FD', background: 'rgba(139,92,246,0.14)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 6, padding: '3px 7px' }}>
+            <span style={{ fontSize: 11, color: '#907840', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '3px 7px' }}>
               Up to {transfer.maxPax} pax
             </span>
           )}
           {transfer.duration && (
-            <span style={{ fontSize: 11, color: '#C4B5FD', background: 'rgba(139,92,246,0.14)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 6, padding: '3px 7px' }}>
+            <span style={{ fontSize: 11, color: '#907840', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 6, padding: '3px 7px' }}>
               {transfer.duration}
             </span>
           )}
         </div>
         {!done && (
-          <div style={{ fontSize: 12, color: hov ? '#A78BFA' : '#475569', textAlign: 'right', marginTop: 8, fontWeight: hov ? 600 : 400 }}>
+          <div style={{ fontSize: 12, color: hov ? '#A08840' : '#5A4A38', textAlign: 'right', marginTop: 8, fontWeight: hov ? 600 : 400 }}>
             {hov ? 'Tap to select →' : 'Select'}
           </div>
         )}
@@ -2395,16 +2441,16 @@ function TransferList({ transfers, fromName, toName, date, time, onSelect, done,
   return (
     <div style={{ width: '100%', maxWidth: isMobile ? '100%' : 520 }}>
       {(fromName || toName) && (
-        <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8' }}>
+        <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>
           {fromName} → {toName}
         </p>
       )}
       {(date || time) && (
-        <p style={{ margin: '0 0 14px', fontSize: 12, color: '#64748B' }}>
+        <p style={{ margin: '0 0 14px', fontSize: 12, color: '#706050' }}>
           {date}{time ? ` at ${time}` : ''}
         </p>
       )}
-      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#E2E8F0' }}>
+      <p style={{ margin: '0 0 14px', fontSize: 15, color: '#E8D5A8' }}>
         Available transfers — tap one to select:
       </p>
       {transfers.map(t => (
@@ -2445,21 +2491,21 @@ function TransferGuestForm({ onSubmit, done }) {
 
   const fieldStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.08)', boxSizing: 'border-box', transition: 'border-color 0.15s',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form onSubmit={handleSubmit} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>
+      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
         Passenger Details
       </p>
 
@@ -2468,13 +2514,13 @@ function TransferGuestForm({ onSubmit, done }) {
           <span style={labelTextStyle}>First Name</span>
           <input type="text" value={firstName} required placeholder="Rahul"
             onChange={e => setFirstName(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>Last Name</span>
           <input type="text" value={lastName} required placeholder="Sharma"
             onChange={e => setLastName(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
       </div>
 
@@ -2482,22 +2528,22 @@ function TransferGuestForm({ onSubmit, done }) {
         <span style={labelTextStyle}>Email Address</span>
         <input type="email" value={email} required placeholder="rahul@example.com"
           onChange={e => setEmail(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <label style={{ ...labelStyle, marginBottom: 18 }}>
         <span style={labelTextStyle}>Phone Number</span>
         <input type="tel" value={phone} required placeholder="9834725737"
           onChange={e => setPhone(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <button type="submit" disabled={!valid} style={{
         width: '100%', padding: '11px', borderRadius: 10, border: 'none',
-        background: valid ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.08)',
-        color: valid ? '#fff' : '#3D4A63', fontSize: 14, fontWeight: 600,
+        background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
+        color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
         cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
-        boxShadow: valid ? '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)' : 'none',
+        boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
       }}>
         Continue to Payment
       </button>
@@ -2562,29 +2608,29 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
 
   const inputStyle = {
     width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(139,92,246,0.22)', fontSize: 14, outline: 'none',
-    color: '#F1F5F9', background: 'rgba(139,92,246,0.06)', boxSizing: 'border-box',
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
     letterSpacing: '0.05em', transition: 'border-color 0.15s',
   };
   const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#94A3B8', marginBottom: 5 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
 
   return (
     <form onSubmit={handlePay} style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
+      border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F1F5F9' }}>Payment Details</p>
-      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#94A3B8' }}>{data.transferType} — {data.vehicleType}</p>
-      <p style={{ margin: '0 0 4px', fontSize: 12, color: '#64748B' }}>{data.fromName || data.fromCode} → {data.toName || data.toCode}</p>
-      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#64748B' }}>{data.date}{data.time ? ` at ${data.time}` : ''}</p>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>{data.transferType} — {data.vehicleType}</p>
+      <p style={{ margin: '0 0 4px', fontSize: 12, color: '#706050' }}>{data.fromName || data.fromCode} → {data.toName || data.toCode}</p>
+      <p style={{ margin: '0 0 14px', fontSize: 12, color: '#706050' }}>{data.date}{data.time ? ` at ${data.time}` : ''}</p>
 
-      <div style={{ background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.25)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-        <span style={{ fontSize: 13, color: '#94A3B8' }}>Total</span>
-        <span style={{ fontWeight: 700, fontSize: 15, color: '#F1F5F9' }}>
+      <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, color: '#9A8868' }}>Total</span>
+        <span style={{ fontWeight: 700, fontSize: 15, color: '#F2EDD4' }}>
           {data.currency} {Number(data.amount).toLocaleString('en-IN')}
         </span>
       </div>
@@ -2593,7 +2639,7 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
         <span style={labelTextStyle}>Card Number</span>
         <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
           onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
       </label>
 
       <div style={{ display: 'flex', gap: 10 }}>
@@ -2601,14 +2647,14 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
           <span style={labelTextStyle}>Expiry</span>
           <input type="text" value={expiry} placeholder="MM/YY"
             onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
         <label style={{ ...labelStyle, flex: 1 }}>
           <span style={labelTextStyle}>CVV</span>
           <input type="text" value={cvv} placeholder="123" maxLength={4}
             onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
             style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(139,92,246,0.85)'; e.target.style.boxShadow = '0 0 0 4px rgba(139,92,246,0.18), 0 0 20px rgba(139,92,246,0.1)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(139,92,246,0.22)'; e.target.style.boxShadow = 'none'; }} />
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
         </label>
       </div>
 
@@ -2616,10 +2662,10 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
 
       <button type="submit" disabled={!valid || paying} style={{
         width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
-        background: (!valid || paying) ? 'rgba(139,92,246,0.08)' : 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
-        color: (!valid || paying) ? '#3D4A63' : '#fff', fontSize: 14, fontWeight: 600,
+        background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+        color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
         cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
-        boxShadow: (!valid || paying) ? 'none' : '0 0 40px rgba(139,92,246,0.6), 0 0 80px rgba(139,92,246,0.2), 0 6px 20px rgba(0,0,0,0.45)',
+        boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
       }}>
         {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
       </button>
@@ -2629,18 +2675,18 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
 
 function TransferBookingConfirmed({ data }) {
   const row = (label, value) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(139,92,246,0.12)' }}>
-      <span style={{ fontSize: 13, color: '#94A3B8' }}>{label}</span>
-      <span style={{ fontSize: 13, fontWeight: 500, color: '#F1F5F9', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      <span style={{ fontSize: 13, color: '#9A8868' }}>{label}</span>
+      <span style={{ fontSize: 13, fontWeight: 500, color: '#F2EDD4', textAlign: 'right', maxWidth: '60%' }}>{value}</span>
     </div>
   );
   return (
     <div style={{
-      background: 'rgba(139,92,246,0.06)',
+      background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(139,92,246,0.22)',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 380,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 14, padding: '20px', width: '100%', maxWidth: 380,
+      boxShadow: '0 16px 56px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.04)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <div style={{
@@ -2832,6 +2878,32 @@ export default function ChatUI({ user }) {
     const msg = text.trim();
     if (!msg || busy) return;
 
+    // If the hotel search form is active and this message isn't a form submission, remind politely
+    if (lastSearchFormIdx !== -1 && !searchFormDone &&
+        !/\bDestination:/i.test(msg) && !/\bCheck-in:/i.test(msg)) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: msg },
+        { role: 'assistant', content: "I'd be happy to help you find a hotel! Before we continue, could you please fill in the search form above? Just enter your destination, check-in and check-out dates, and the number of guests, then click **Search Hotels** — I'll find the best options for you." },
+      ]);
+      setInput('');
+      if (taRef.current) taRef.current.style.height = 'auto';
+      return;
+    }
+
+    // If the flight search form is active and this message isn't a form submission, remind politely
+    if (lastFlightSearchIdx !== -1 && !flightSearchDone &&
+        !/\bFrom:/i.test(msg) && !/\bTo:/i.test(msg)) {
+      setMessages(prev => [
+        ...prev,
+        { role: 'user', content: msg },
+        { role: 'assistant', content: "I'd be happy to help you find a flight! Before we continue, could you please fill in the flight search form above? Just enter your departure city, destination, travel date, number of passengers, and preferred cabin class, then click **Search Flights** — I'll take care of the rest." },
+      ]);
+      setInput('');
+      if (taRef.current) taRef.current.style.height = 'auto';
+      return;
+    }
+
     if (!activeIdRef.current) {
       const id = genId();
       activeIdRef.current = id;
@@ -2882,7 +2954,9 @@ export default function ChatUI({ user }) {
   /* ── Search form: done when a user message exists after the last search form marker ── */
   const lastSearchFormIdx = messages.reduce((acc, m, i) =>
     m.role === 'assistant' && SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
-  const searchFormDone = lastSearchFormIdx !== -1 && messages.slice(lastSearchFormIdx + 1).some(m => m.role === 'user');
+  const searchFormDone = lastSearchFormIdx !== -1 && messages.slice(lastSearchFormIdx + 1).some(
+    m => m.role === 'user' && /\bDestination:/i.test(m.content) && /\bCheck-in:/i.test(m.content)
+  );
 
   function handleSearchFormSubmit(destination, checkin, checkout, adults) {
     const msg = `Destination: ${destination}\nCheck-in: ${checkin}\nCheck-out: ${checkout}\nAdults: ${adults}`;
@@ -2920,7 +2994,9 @@ export default function ChatUI({ user }) {
   /* ── Flight search form: done when a user message exists after the last form ── */
   const lastFlightSearchIdx = messages.reduce((acc, m, i) =>
     m.role === 'assistant' && FLIGHT_SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
-  const flightSearchDone = lastFlightSearchIdx !== -1 && messages.slice(lastFlightSearchIdx + 1).some(m => m.role === 'user');
+  const flightSearchDone = lastFlightSearchIdx !== -1 && messages.slice(lastFlightSearchIdx + 1).some(
+    m => m.role === 'user' && /\bFrom:/i.test(m.content) && /\bTo:/i.test(m.content) && /\bDeparture:/i.test(m.content)
+  );
 
   function handleFlightSearchSubmit(from, to, departure, returnDate, passengers, cabin) {
     const ret = returnDate ? `\nReturn: ${returnDate}` : '';
@@ -3052,8 +3128,8 @@ export default function ChatUI({ user }) {
           )}
           <div style={{
             position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1000,
-            width: SIDEBAR_OPEN, background: '#050810',
-            borderRight: '1px solid rgba(139,92,246,0.15)',
+            width: SIDEBAR_OPEN, background: '#100E0A',
+            borderRight: '1px solid rgba(201,168,76,0.06)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
             transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.22s ease',
@@ -3087,12 +3163,12 @@ export default function ChatUI({ user }) {
           )}
           <div style={{
             position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 1000,
-            width: SIDEBAR_OPEN, background: '#050810',
-            borderRight: '1px solid rgba(139,92,246,0.15)',
+            width: SIDEBAR_OPEN, background: '#100E0A',
+            borderRight: '1px solid rgba(201,168,76,0.06)',
             display: 'flex', flexDirection: 'column', overflow: 'hidden',
             transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
             transition: 'transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)',
-            boxShadow: sidebarOpen ? '8px 0 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.12)' : 'none',
+            boxShadow: sidebarOpen ? '8px 0 60px rgba(0,0,0,0.8)' : 'none',
           }}>
             <SidebarContent
               sidebarOpen={true}
@@ -3120,7 +3196,7 @@ export default function ChatUI({ user }) {
           flexShrink: 0, height: 52,
           display: 'flex', alignItems: 'center',
           padding: '0 12px', gap: 8,
-          background: 'rgba(2,4,8,0.8)',
+          background: 'rgba(13,11,8,0.92)',
           backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
           borderBottom: 'none', position: 'relative',
         }}>
@@ -3134,12 +3210,12 @@ export default function ChatUI({ user }) {
             title="New chat"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: 15, fontWeight: 700, color: '#F0F4FF',
+              fontSize: 15, fontWeight: 600, color: '#E8D5A8',
               padding: '0 4px', borderRadius: 6,
-              transition: 'color 0.15s',
+              transition: 'color 0.2s', letterSpacing: '0.2px',
             }}
-            onMouseEnter={e => e.currentTarget.style.color = '#C4B5FD'}
-            onMouseLeave={e => e.currentTarget.style.color = '#F0F4FF'}
+            onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'}
+            onMouseLeave={e => e.currentTarget.style.color = '#E8D5A8'}
           >
             Pargo AI
           </button>
@@ -3159,18 +3235,41 @@ export default function ChatUI({ user }) {
               padding: '0 16px 20px',
               overflowY: 'auto',
             }}>
-            <div className="hero-logo" style={{ position: 'relative', marginBottom: 20 }}>
-              {/* Outer ring — static */}
+            <div className="hero-logo" style={{ position: 'relative', marginBottom: 20, width: 68, height: 68 }}>
+              {/* Orbit ring 1 */}
+              <div className="orbit-ring-1" style={{
+                position: 'absolute', inset: -16, borderRadius: '50%',
+                border: '1px solid rgba(201,168,76,0.18)',
+                boxShadow: '0 0 8px rgba(201,168,76,0.06)',
+              }}>
+                <div style={{
+                  position: 'absolute', top: -3, left: '50%', transform: 'translateX(-50%)',
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: '#C9A84C',
+                  boxShadow: '0 0 6px rgba(201,168,76,0.9)',
+                }} />
+              </div>
+              {/* Orbit ring 2 */}
+              <div className="orbit-ring-2" style={{
+                position: 'absolute', inset: -26, borderRadius: '50%',
+                border: '1px solid rgba(201,168,76,0.08)',
+              }}>
+                <div style={{
+                  position: 'absolute', bottom: -2, right: '20%',
+                  width: 3, height: 3, borderRadius: '50%',
+                  background: 'rgba(201,168,76,0.7)',
+                  boxShadow: '0 0 4px rgba(201,168,76,0.7)',
+                }} />
+              </div>
               <div style={{
-                position: 'absolute', inset: -10, borderRadius: '50%',
-                border: '1px solid rgba(139,92,246,0.22)',
-              }} />
-              <div style={{
-                width: 68, height: 68, borderRadius: '50%', background: 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)',
+                width: 68, height: 68, borderRadius: '50%',
+                background: 'linear-gradient(145deg, #1A1510 0%, #0D0A07 60%, #15110A 100%)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 26, fontWeight: 800, color: '#fff',
-                boxShadow: '0 0 28px rgba(139,92,246,0.65), 0 0 56px rgba(139,92,246,0.2)',
+                fontSize: 26, fontWeight: 800, color: '#C9A84C',
+                boxShadow: '0 0 28px rgba(201,168,76,0.38), 0 0 56px rgba(201,168,76,0.12)',
+                border: '1px solid rgba(201,168,76,0.22)',
                 letterSpacing: '-1px',
+                textShadow: '0 0 12px rgba(215,178,80,0.7)',
               }}>P</div>
             </div>
             <h1 className="gradient-heading hero-title" style={{
@@ -3179,13 +3278,13 @@ export default function ChatUI({ user }) {
             }}>
               What would you like to book?
             </h1>
-            <p className="hero-sub" style={{ color: '#94A3B8', fontSize: 14, margin: '10px 0 0', letterSpacing: '0.2px' }}>
+            <p className="hero-sub" style={{ color: '#4A3A1A', fontSize: 12, margin: '10px 0 0', letterSpacing: '1.2px', textTransform: 'uppercase', fontWeight: 500 }}>
               Hotels · Flights · Ground Transfers · Worldwide
             </p>
 
             {/* Location indicator */}
             {userLocation?.displayName && (
-              <div className="hero-loc" style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '8px 0 0', color: '#94A3B8', fontSize: 13 }}>
+              <div className="hero-loc" style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '8px 0 0', color: '#9A8868', fontSize: 13 }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                   <circle cx="12" cy="9" r="2.5" />
@@ -3209,11 +3308,11 @@ export default function ChatUI({ user }) {
                   position: 'fixed', top: '50%', left: '50%',
                   transform: 'translate(-50%, -50%)',
                   zIndex: 201,
-                  background: 'rgba(5,8,20,0.97)',
-                  backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(139,92,246,0.2)',
+                  background: 'rgba(14,11,7,0.99)',
+                  backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(201,168,76,0.08)',
                   borderRadius: 14,
-                  boxShadow: '0 24px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,92,246,0.2), inset 0 1px 0 rgba(255,255,255,0.06)',
+                  boxShadow: '0 32px 80px rgba(0,0,0,0.92), inset 0 1px 0 rgba(201,168,76,0.05)',
                   width: 300, maxWidth: 'calc(100vw - 32px)',
                   overflow: 'hidden',
                 }}>
@@ -3286,16 +3385,17 @@ export default function ChatUI({ user }) {
                 className="service-chip-shimmer"
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '11px 22px', borderRadius: 12,
-                  border: '1px solid', borderColor: servicesOpen ? 'transparent' : 'rgba(139,92,246,0.25)',
-                  background: servicesOpen ? 'linear-gradient(135deg, #8B5CF6 0%, #4F46E5 50%, #06B6D4 100%)' : 'rgba(139,92,246,0.07)',
-                  color: servicesOpen ? '#fff' : '#F1F5F9',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  boxShadow: servicesOpen ? '0 0 20px rgba(139,92,246,0.3)' : '0 1px 6px rgba(139,92,246,0.1)',
-                  transition: 'all 0.15s ease',
+                  padding: '11px 22px', borderRadius: 10,
+                  border: '1px solid', borderColor: servicesOpen ? 'rgba(201,168,76,0.35)' : 'rgba(201,168,76,0.08)',
+                  background: servicesOpen ? 'rgba(25,18,8,0.95)' : 'rgba(201,168,76,0.02)',
+                  color: servicesOpen ? '#E0C060' : '#6A5030',
+                  fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                  boxShadow: servicesOpen ? '0 0 18px rgba(201,168,76,0.18)' : 'none',
+                  letterSpacing: '0.5px',
+                  transition: 'all 0.2s ease',
                 }}
-                onMouseEnter={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.5)'; e.currentTarget.style.boxShadow = '0 2px 10px rgba(139,92,246,0.2)'; }}}
-                onMouseLeave={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = 'rgba(139,92,246,0.25)'; e.currentTarget.style.boxShadow = '0 1px 6px rgba(139,92,246,0.1)'; }}}
+                onMouseEnter={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.2)'; e.currentTarget.style.color = '#8A7040'; }}}
+                onMouseLeave={e => { if (!servicesOpen) { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.08)'; e.currentTarget.style.color = '#6A5030'; }}}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -3315,28 +3415,26 @@ export default function ChatUI({ user }) {
             <div style={{
               flexShrink: 0,
               padding: isMobile ? '10px 16px max(14px, env(safe-area-inset-bottom))' : '14px 32px 22px',
-              background: 'rgba(2,4,8,0.88)',
+              background: 'rgba(13,11,8,0.95)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               position: 'relative', zIndex: 2,
             }}>
               <div className="input-glow-line" />
-              <div style={{
-                display: 'flex', alignItems: 'flex-end', gap: 10,
-              }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
                 <textarea
                   ref={taRef}
                   rows={1}
                   value={input}
                   placeholder="Message Pargo AI"
-                  onChange={e => { setInput(e.target.value); resize(); }}
+                  onChange={e => { setInput(e.target.value); }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
                   style={{
                     flex: 1, border: 'none', outline: 'none', resize: 'none',
-                    background: 'transparent', color: '#F0F4FF',
+                    background: 'transparent', color: '#F2EDD4',
                     fontSize: 16, lineHeight: 1.6,
                     minHeight: 26, maxHeight: 200, paddingTop: 3,
                     fontFamily: 'inherit',
-                    caretColor: '#A855F7',
+                    caretColor: '#C9A84C',
                   }}
                 />
                 <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
@@ -3394,34 +3492,32 @@ export default function ChatUI({ user }) {
 
             <div style={{
               flexShrink: 0,
-              padding: isMobile ? '10px 16px max(14px, env(safe-area-inset-bottom))' : '14px 32px 22px',
-              background: 'rgba(2,4,8,0.88)',
+              padding: isMobile ? '10px 16px max(14px, env(safe-area-inset-bottom))' : '14px 32px 10px',
+              background: 'rgba(13,11,8,0.95)',
               backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               position: 'relative', zIndex: 2,
             }}>
               <div className="input-glow-line" />
-              <div style={{
-                display: 'flex', alignItems: 'flex-end', gap: 10,
-              }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
                 <textarea
                   ref={taRef}
                   rows={1}
                   value={input}
                   placeholder="Message Pargo AI…"
-                  onChange={e => { setInput(e.target.value); resize(); }}
+                  onChange={e => { setInput(e.target.value); }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); } }}
                   style={{
                     flex: 1, border: 'none', outline: 'none', resize: 'none',
-                    background: 'transparent', color: '#F0F4FF',
+                    background: 'transparent', color: '#F2EDD4',
                     fontSize: 16, lineHeight: 1.6,
                     minHeight: 26, maxHeight: 200, paddingTop: 3,
                     fontFamily: 'inherit',
-                    caretColor: '#A855F7',
+                    caretColor: '#C9A84C',
                   }}
                 />
                 <SendButton onClick={() => send(input)} disabled={!input.trim() || busy} />
               </div>
-              <p style={{ textAlign: 'center', color: '#334155', fontSize: 11, margin: '8px 0 0' }}>
+              <p style={{ textAlign: 'center', color: '#5A4A38', fontSize: 10, margin: '6px 0 0', letterSpacing: '0.2px' }}>
                 Pargo AI can make mistakes. Check important info.
               </p>
             </div>
@@ -3432,3 +3528,4 @@ export default function ChatUI({ user }) {
     </div>
   );
 }
+
