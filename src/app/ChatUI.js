@@ -3278,7 +3278,7 @@ export default function ChatUI({ user }) {
             }}>
               What would you like to book?
             </h1>
-            <p className="hero-sub" style={{ color: '#4A3A1A', fontSize: 12, margin: '10px 0 0', letterSpacing: '1.2px', textTransform: 'uppercase', fontWeight: 500 }}>
+            <p className="hero-sub" style={{ color: '#4A3A1A', fontSize: 12, margin: '10px 0 0', letterSpacing: '1.2px', textTransform: 'uppercase', fontWeight: 500, textAlign: 'center', width: '100%' }}>
               Hotels · Flights · Ground Transfers · Worldwide
             </p>
 
