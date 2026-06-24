@@ -10,5 +10,11 @@
     "name": "Demo Staff",
     "email": "staff@pargoai.com",
     "hash": "$2b$12$pvUmhyW8xKfzmdckM4T6GuR4QTiEQAHsxWvvtAIES3rbzO2PnM152"
+  },
+  {
+    "id": "3",
+    "name": "Parteek Goyat",
+    "email": "parteekgoyat7@gmail.com",
+    "hash": "$2b$12$VCCwfGKcTAn5FzemhM2Q/udyXr4OY96rw.wv/UR38JM0kfNR9Q84S"
   }
 ]
