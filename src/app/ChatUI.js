@@ -9,6 +9,53 @@ import { logoutAction } from '@/app/actions/auth';
 function genId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 }
+function loadRazorpayScript() {
+  if (typeof window === 'undefined') return Promise.resolve(false);
+  if (window.Razorpay) return Promise.resolve(true);
+  return new Promise(resolve => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload  = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+async function payWithRazorpay({ amount, currency, name, description, guest }) {
+  const orderRes = await fetch('/api/payment/create-order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount, currency }),
+  });
+  if (!orderRes.ok) {
+    const err = await orderRes.json().catch(() => ({}));
+    throw new Error(err.error || 'Could not start payment');
+  }
+  const order = await orderRes.json();
+
+  const loaded = await loadRazorpayScript();
+  if (!loaded) throw new Error('Could not load payment gateway. Check your connection.');
+
+  return new Promise((resolve, reject) => {
+    const rzp = new window.Razorpay({
+      key: order.key,
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.orderId,
+      name: 'Pargo AI',
+      description,
+      prefill: {
+        name:    guest ? `${guest.firstName || ''} ${guest.lastName || ''}`.trim() : undefined,
+        email:   guest?.email,
+        contact: guest?.phone,
+      },
+      theme: { color: '#C9A84C' },
+      handler: response => resolve(response),
+      modal: { ondismiss: () => reject(new Error('Payment cancelled')) },
+    });
+    rzp.on('payment.failed', response => reject(new Error(response.error?.description || 'Payment failed')));
+    rzp.open();
+  });
+}
 function getTitle(msgs) {
   const first = msgs.find(m => m.role === 'user');
   if (!first) return 'New conversation';
@@ -1117,16 +1164,10 @@ function parseBookingConfirmedToken(content) {
   try { return JSON.parse(t.slice('[BOOKING_CONFIRMED:'.length, -1)); } catch { return null; }
 }
 
-/* ── PaymentGate (dummy card form) ───────────────────── */
+/* ── PaymentGate (Razorpay checkout) ─────────────────── */
 function PaymentGate({ data, guestRef, onComplete, done }) {
-  const [cardNum, setCardNum] = useState('');
-  const [expiry,  setExpiry]  = useState('');
-  const [cvv,     setCvv]     = useState('');
-  const [paying,  setPaying]  = useState(false);
-  const [error,   setError]   = useState('');
-
-  const cardClean = cardNum.replace(/\s/g, '');
-  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+  const [paying, setPaying] = useState(false);
+  const [error,  setError]  = useState('');
 
   if (done) {
     return (
@@ -1143,24 +1184,29 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
     );
   }
 
-  function fmtCard(val) {
-    return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
-  }
-  function fmtExpiry(val) {
-    const d = val.replace(/\D/g, '').slice(0, 4);
-    return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
-  }
-
-  async function handlePay(e) {
-    e.preventDefault();
-    if (!valid || paying) return;
+  async function handlePay() {
+    if (paying) return;
     setPaying(true);
     setError('');
     try {
-      const res = await fetch('/api/payment/book', {
+      const guest = guestRef.current;
+      const rzpResponse = await payWithRazorpay({
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        description: data.hotelName,
+        guest,
+      });
+      const res = await fetch('/api/payment/verify-and-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rateKey: data.rateKey, guest: guestRef.current }),
+        body: JSON.stringify({
+          type: 'hotel',
+          razorpay_payment_id: rzpResponse.razorpay_payment_id,
+          razorpay_order_id:   rzpResponse.razorpay_order_id,
+          razorpay_signature:  rzpResponse.razorpay_signature,
+          rateKey: data.rateKey,
+          guest,
+        }),
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
       onComplete(await res.json());
@@ -1170,18 +1216,8 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
     }
   }
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
-    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
-    letterSpacing: '0.05em', transition: 'border-color 0.15s',
-  };
-  const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
-
   return (
-    <form
-      onSubmit={handlePay}
+    <div
       style={{
         background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
@@ -1191,7 +1227,7 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
       }}
     >
       <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
-        Payment Details
+        Payment
       </p>
       <p style={{ margin: '0 0 14px', fontSize: 13, color: '#9A8868' }}>{data.hotelName}</p>
 
@@ -1206,60 +1242,27 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
         </span>
       </div>
 
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Card Number</span>
-        <input
-          type="text" value={cardNum} placeholder="1234 5678 9012 3456"
-          onChange={e => setCardNum(fmtCard(e.target.value))}
-          style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-        />
-      </label>
-
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Expiry</span>
-          <input
-            type="text" value={expiry} placeholder="MM/YY"
-            onChange={e => setExpiry(fmtExpiry(e.target.value))}
-            style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-          />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>CVV</span>
-          <input
-            type="text" value={cvv} placeholder="123" maxLength={4}
-            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
-            style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-          />
-        </label>
-      </div>
-
       {error && (
         <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>
       )}
 
       <button
-        type="submit"
-        disabled={!valid || paying}
+        type="button"
+        onClick={handlePay}
+        disabled={paying}
         style={{
           width: '100%', padding: '11px', marginTop: 4,
           borderRadius: 10, border: 'none',
-          background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
-          color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
-          cursor: (!valid || paying) ? 'not-allowed' : 'pointer',
+          background: paying ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+          color: paying ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
+          cursor: paying ? 'not-allowed' : 'pointer',
           transition: 'background 0.15s',
-          boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
+          boxShadow: paying ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
         }}
       >
-        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+        {paying ? 'Processing...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
       </button>
-    </form>
+    </div>
   );
 }
 
@@ -1943,14 +1946,8 @@ function parseFlightBookingConfirmedToken(content) {
 }
 
 function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
-  const [cardNum, setCardNum] = useState('');
-  const [expiry,  setExpiry]  = useState('');
-  const [cvv,     setCvv]     = useState('');
-  const [paying,  setPaying]  = useState(false);
-  const [error,   setError]   = useState('');
-
-  const cardClean = cardNum.replace(/\s/g, '');
-  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+  const [paying, setPaying] = useState(false);
+  const [error,  setError]  = useState('');
 
   if (done) {
     return (
@@ -1967,22 +1964,28 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
     );
   }
 
-  function fmtCard(val)   { return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); }
-  function fmtExpiry(val) { const d = val.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; }
-
-  async function handlePay(e) {
-    e.preventDefault();
-    if (!valid || paying) return;
+  async function handlePay() {
+    if (paying) return;
     setPaying(true);
     setError('');
     try {
       const guestList = Array.isArray(flightGuestRef.current)
         ? flightGuestRef.current
         : [flightGuestRef.current];
-      const res = await fetch('/api/flights/book', {
+      const rzpResponse = await payWithRazorpay({
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        description: `${data.airline} · ${data.route}`,
+        guest: guestList[0],
+      });
+      const res = await fetch('/api/payment/verify-and-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'flight',
+          razorpay_payment_id: rzpResponse.razorpay_payment_id,
+          razorpay_order_id:   rzpResponse.razorpay_order_id,
+          razorpay_signature:  rzpResponse.razorpay_signature,
           offerId:      data.offerId,
           passengerIds: data.passengerIds,
           guests:       guestList,
@@ -2002,24 +2005,15 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
     }
   }
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
-    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
-    letterSpacing: '0.05em', transition: 'border-color 0.15s',
-  };
-  const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
-
   return (
-    <form onSubmit={handlePay} style={{
+    <div style={{
       background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment</p>
       <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>{data.airline} · {data.route}</p>
       <p style={{ margin: '0 0 14px', fontSize: 12, color: '#706050' }}>{data.departureDate}</p>
 
@@ -2030,41 +2024,18 @@ function FlightPaymentGate({ data, flightGuestRef, onComplete, done }) {
         </span>
       </div>
 
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Card Number</span>
-        <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
-          onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-      </label>
-
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Expiry</span>
-          <input type="text" value={expiry} placeholder="MM/YY"
-            onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>CVV</span>
-          <input type="text" value={cvv} placeholder="123" maxLength={4}
-            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
-            style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-      </div>
-
       {error && <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
 
-      <button type="submit" disabled={!valid || paying} style={{
+      <button type="button" onClick={handlePay} disabled={paying} style={{
         width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
-        background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
-        color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
-        cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
-        boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
+        background: paying ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+        color: paying ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
+        cursor: paying ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+        boxShadow: paying ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
       }}>
-        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+        {paying ? 'Processing...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
       </button>
-    </form>
+    </div>
   );
 }
 
@@ -2552,14 +2523,8 @@ function TransferGuestForm({ onSubmit, done }) {
 }
 
 function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
-  const [cardNum, setCardNum] = useState('');
-  const [expiry,  setExpiry]  = useState('');
-  const [cvv,     setCvv]     = useState('');
-  const [paying,  setPaying]  = useState(false);
-  const [error,   setError]   = useState('');
-
-  const cardClean = cardNum.replace(/\s/g, '');
-  const valid = cardClean.length === 16 && expiry.length === 5 && cvv.length >= 3;
+  const [paying, setPaying] = useState(false);
+  const [error,  setError]  = useState('');
 
   if (done) {
     return (
@@ -2576,26 +2541,33 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
     );
   }
 
-  function fmtCard(val)   { return val.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim(); }
-  function fmtExpiry(val) { const d = val.replace(/\D/g, '').slice(0, 4); return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d; }
-
-  async function handlePay(e) {
-    e.preventDefault();
-    if (!valid || paying) return;
+  async function handlePay() {
+    if (paying) return;
     setPaying(true);
     setError('');
     try {
-      const res = await fetch('/api/transfers/book', {
+      const guest = transferGuestRef.current;
+      const rzpResponse = await payWithRazorpay({
+        amount: data.amount,
+        currency: data.currency || 'INR',
+        description: `${data.transferType} — ${data.vehicleType}`,
+        guest,
+      });
+      const res = await fetch('/api/payment/verify-and-book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'transfer',
+          razorpay_payment_id: rzpResponse.razorpay_payment_id,
+          razorpay_order_id:   rzpResponse.razorpay_order_id,
+          razorpay_signature:  rzpResponse.razorpay_signature,
           rateKey:  data.rateKey,
           fromCode: data.fromCode,
           toCode:   data.toCode,
           date:     data.date,
           time:     data.time,
           adults:   data.adults || 1,
-          guest:    transferGuestRef.current,
+          guest,
         }),
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Booking failed'); }
@@ -2606,24 +2578,15 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
     }
   }
 
-  const inputStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
-    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
-    letterSpacing: '0.05em', transition: 'border-color 0.15s',
-  };
-  const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
-
   return (
-    <form onSubmit={handlePay} style={{
+    <div style={{
       background: 'rgba(255,255,255,0.03)',
       backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
       border: '1px solid rgba(255,255,255,0.08)',
       borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
       boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
     }}>
-      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment Details</p>
+      <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>Payment</p>
       <p style={{ margin: '0 0 4px', fontSize: 13, color: '#9A8868' }}>{data.transferType} — {data.vehicleType}</p>
       <p style={{ margin: '0 0 4px', fontSize: 12, color: '#706050' }}>{data.fromName || data.fromCode} → {data.toName || data.toCode}</p>
       <p style={{ margin: '0 0 14px', fontSize: 12, color: '#706050' }}>{data.date}{data.time ? ` at ${data.time}` : ''}</p>
@@ -2635,41 +2598,18 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
         </span>
       </div>
 
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Card Number</span>
-        <input type="text" value={cardNum} placeholder="1234 5678 9012 3456"
-          onChange={e => setCardNum(fmtCard(e.target.value))} style={inputStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-      </label>
-
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Expiry</span>
-          <input type="text" value={expiry} placeholder="MM/YY"
-            onChange={e => setExpiry(fmtExpiry(e.target.value))} style={inputStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>CVV</span>
-          <input type="text" value={cvv} placeholder="123" maxLength={4}
-            onChange={e => setCvv(e.target.value.replace(/\D/g, ''))}
-            style={{ ...inputStyle, letterSpacing: '0.2em' }}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-      </div>
-
       {error && <p style={{ color: '#dc2626', fontSize: 13, margin: '0 0 10px' }}>{error}</p>}
 
-      <button type="submit" disabled={!valid || paying} style={{
+      <button type="button" onClick={handlePay} disabled={paying} style={{
         width: '100%', padding: '11px', marginTop: 4, borderRadius: 10, border: 'none',
-        background: (!valid || paying) ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
-        color: (!valid || paying) ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
-        cursor: (!valid || paying) ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
-        boxShadow: (!valid || paying) ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
+        background: paying ? 'rgba(255,255,255,0.04)' : 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)',
+        color: paying ? '#4A3D28' : '#fff', fontSize: 14, fontWeight: 600,
+        cursor: paying ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+        boxShadow: paying ? 'none' : '0 4px 20px rgba(0,0,0,0.5)',
       }}>
-        {paying ? 'Confirming...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
+        {paying ? 'Processing...' : `Pay ${data.currency} ${Number(data.amount).toLocaleString('en-IN')}`}
       </button>
-    </form>
+    </div>
   );
 }
 

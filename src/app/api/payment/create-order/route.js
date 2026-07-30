@@ -6,6 +6,10 @@ export async function POST(request) {
 
   const { amount, currency } = await request.json();
 
+  if (!amount || Math.round(amount * 100) < 100) {
+    return Response.json({ error: 'Amount must be at least ₹1' }, { status: 400 });
+  }
+
   const keyId     = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
@@ -20,7 +24,7 @@ export async function POST(request) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      amount:   Math.round(amount),
+      amount:   Math.round(amount * 100), // rupees -> paise
       currency: currency || 'INR',
       receipt:  `pargo_${Date.now()}`,
     }),
