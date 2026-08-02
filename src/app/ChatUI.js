@@ -653,7 +653,7 @@ function ServiceMenuItem({ label, sub, icon, onClick, isLast }) {
 }
 
 /* ── Message row ─────────────────────────────────────── */
-function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, flightPassengerCount, onFlightPaymentComplete, flightPaymentDone, flightGuestRef, onTransferSearchSubmit, transferSearchFormDone, onTransferSelect, transferListDone, onTransferGuestSubmit, transferGuestDone, onTransferPaymentComplete, transferPaymentDone, transferGuestRef }) {
+function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, hotelGuestCount, onSearchFormSubmit, searchFormDone, onHotelSelect, hotelListDone, onPaymentComplete, paymentGateDone, guestRef, onFlightSearchSubmit, flightSearchDone, onFlightSelect, flightListDone, onFlightGuestSubmit, flightGuestDone, flightPassengerCount, onFlightPaymentComplete, flightPaymentDone, flightGuestRef, onTransferSearchSubmit, transferSearchFormDone, onTransferSelect, transferListDone, onTransferGuestSubmit, transferGuestDone, transferGuestCount, onTransferPaymentComplete, transferPaymentDone, transferGuestRef }) {
   const px = isMobile ? 12 : 24;
   const gap = isMobile ? 10 : 16;
   if (role === 'user') {
@@ -743,7 +743,7 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
-          <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} />
+          <GuestDetailsForm onSubmit={onGuestFormSubmit} done={guestFormDone} guestCount={hotelGuestCount || 1} />
         </div>
       </div>
     );
@@ -846,7 +846,13 @@ function Message({ role, content, isMobile, onGuestFormSubmit, guestFormDone, on
         <GPTAvatar />
         <div style={{ flex: 1 }}>
           {textBefore && <p style={{ margin: '0 0 12px', color: '#9A8868', fontSize: 14 }}>{textBefore}</p>}
-          <TransferGuestForm onSubmit={onTransferGuestSubmit} done={transferGuestDone} />
+          <GuestDetailsForm
+            onSubmit={onTransferGuestSubmit}
+            done={transferGuestDone}
+            guestCount={transferGuestCount || 1}
+            heading="Passenger Details"
+            confirmLabel="Continue to Payment"
+          />
         </div>
       </div>
     );
@@ -1189,12 +1195,12 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
     setPaying(true);
     setError('');
     try {
-      const guest = guestRef.current;
+      const guestList = Array.isArray(guestRef.current) ? guestRef.current : [guestRef.current];
       const rzpResponse = await payWithRazorpay({
         amount: data.amount,
         currency: data.currency || 'INR',
         description: data.hotelName,
-        guest,
+        guest: guestList[0],
       });
       const res = await fetch('/api/payment/verify-and-book', {
         method: 'POST',
@@ -1205,7 +1211,7 @@ function PaymentGate({ data, guestRef, onComplete, done }) {
           razorpay_order_id:   rzpResponse.razorpay_order_id,
           razorpay_signature:  rzpResponse.razorpay_signature,
           rateKey: data.rateKey,
-          guest,
+          guests: guestList,
         }),
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error); }
@@ -1437,18 +1443,105 @@ function SearchForm({ prefill = {}, onSubmit, done }) {
 }
 
 /* ── Guest Details Form ──────────────────────────────── */
-function GuestDetailsForm({ onSubmit, done }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [email,     setEmail]     = useState('');
-  const [phone,     setPhone]     = useState('');
+function emptyGuest() {
+  return { firstName: '', lastName: '', email: '', phone: '' };
+}
 
-  const valid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
+function GuestSection({ index, total, data, onChange }) {
+  const isLead = index === 0;
+  const fieldStyle = {
+    width: '100%', padding: '9px 12px', borderRadius: 8,
+    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
+    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
+    transition: 'border-color 0.15s',
+  };
+  const labelStyle     = { display: 'block', marginBottom: 12 };
+  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
+  const set = (field, val) => onChange(index, field, val);
+
+  return (
+    <div style={{
+      border: '1px solid rgba(255,255,255,0.06)', borderRadius: 12, padding: '16px',
+      background: 'rgba(255,255,255,0.02)',
+      marginBottom: total > 1 ? 16 : 0,
+    }}>
+      {total > 1 && (
+        <p style={{ margin: '0 0 14px', fontWeight: 600, fontSize: 13, color: '#A08840', letterSpacing: '0.2px' }}>
+          {isLead ? 'Guest 1 (Lead)' : `Guest ${index + 1}`}
+        </p>
+      )}
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>First Name</span>
+          <input
+            type="text" value={data.firstName} required
+            onChange={e => set('firstName', e.target.value)}
+            placeholder="Rahul"
+            style={fieldStyle}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+          />
+        </label>
+        <label style={{ ...labelStyle, flex: 1 }}>
+          <span style={labelTextStyle}>Last Name</span>
+          <input
+            type="text" value={data.lastName} required
+            onChange={e => set('lastName', e.target.value)}
+            placeholder="Sharma"
+            style={fieldStyle}
+            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+          />
+        </label>
+      </div>
+
+      {isLead && (
+        <>
+          <label style={labelStyle}>
+            <span style={labelTextStyle}>Email Address</span>
+            <input
+              type="email" value={data.email} required
+              onChange={e => set('email', e.target.value)}
+              placeholder="rahul@example.com"
+              style={fieldStyle}
+              onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+            />
+          </label>
+
+          <label style={{ ...labelStyle, marginBottom: 0 }}>
+            <span style={labelTextStyle}>Phone Number</span>
+            <input
+              type="tel" value={data.phone} required
+              onChange={e => set('phone', e.target.value)}
+              placeholder="9834725737"
+              style={fieldStyle}
+              onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
+              onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
+            />
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
+
+function GuestDetailsForm({ onSubmit, done, guestCount = 1, heading = 'Enter your booking details', confirmLabel = 'Confirm Booking' }) {
+  const [guests, setGuests] = useState(() => Array.from({ length: guestCount }, emptyGuest));
+
+  const valid = guests.every((g, i) =>
+    g.firstName.trim() && g.lastName.trim() && (i > 0 || (g.email.trim() && g.phone.trim()))
+  );
+
+  function handleChange(index, field, value) {
+    setGuests(prev => prev.map((g, i) => i === index ? { ...g, [field]: value } : g));
+  }
 
   function handleSubmit(e) {
     e.preventDefault();
     if (!valid) return;
-    onSubmit(firstName.trim(), lastName.trim(), email.trim(), phone.trim());
+    onSubmit(guests.map(g => ({ ...g, firstName: g.firstName.trim(), lastName: g.lastName.trim(), email: g.email.trim(), phone: g.phone.trim() })));
   }
 
   if (done) {
@@ -1466,19 +1559,6 @@ function GuestDetailsForm({ onSubmit, done }) {
     );
   }
 
-  const fieldStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
-    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box',
-    transition: 'border-color 0.15s',
-  };
-  const labelStyle = {
-    display: 'block', marginBottom: 12,
-  };
-  const labelTextStyle = {
-    display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5,
-  };
-
   return (
     <form
       onSubmit={handleSubmit}
@@ -1491,63 +1571,18 @@ function GuestDetailsForm({ onSubmit, done }) {
       }}
     >
       <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
-        Enter your booking details
+        {heading}
       </p>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 0 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>First Name</span>
-          <input
-            type="text" value={firstName} required
-            onChange={e => setFirstName(e.target.value)}
-            placeholder="Rahul"
-            style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-          />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Last Name</span>
-          <input
-            type="text" value={lastName} required
-            onChange={e => setLastName(e.target.value)}
-            placeholder="Sharma"
-            style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-            onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-          />
-        </label>
-      </div>
-
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Email Address</span>
-        <input
-          type="email" value={email} required
-          onChange={e => setEmail(e.target.value)}
-          placeholder="rahul@example.com"
-          style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-        />
-      </label>
-
-      <label style={{ ...labelStyle, marginBottom: 18 }}>
-        <span style={labelTextStyle}>Phone Number</span>
-        <input
-          type="tel" value={phone} required
-          onChange={e => setPhone(e.target.value)}
-          placeholder="9834725737"
-          style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }}
-          onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }}
-        />
-      </label>
+      {guests.map((g, i) => (
+        <GuestSection key={i} index={i} total={guestCount} data={g} onChange={handleChange} />
+      ))}
 
       <button
         type="submit"
         disabled={!valid}
         style={{
-          width: '100%', padding: '11px',
+          width: '100%', marginTop: 16, padding: '11px',
           borderRadius: 10, border: 'none',
           background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
           color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
@@ -1556,7 +1591,7 @@ function GuestDetailsForm({ onSubmit, done }) {
           boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
         }}
       >
-        Confirm Booking
+        {guestCount > 1 ? `Confirm ${guestCount} Guests` : confirmLabel}
       </button>
     </form>
   );
@@ -2431,96 +2466,6 @@ function TransferList({ transfers, fromName, toName, date, time, onSelect, done,
   );
 }
 
-function TransferGuestForm({ onSubmit, done }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName,  setLastName]  = useState('');
-  const [email,     setEmail]     = useState('');
-  const [phone,     setPhone]     = useState('');
-
-  const valid = firstName.trim() && lastName.trim() && email.trim() && phone.trim();
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!valid) return;
-    onSubmit(firstName.trim(), lastName.trim(), email.trim(), phone.trim());
-  }
-
-  if (done) {
-    return (
-      <div style={{
-        display: 'inline-flex', alignItems: 'center', gap: 8,
-        background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)',
-        borderRadius: 10, padding: '8px 14px', fontSize: 14, color: '#4ADE80',
-      }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-        </svg>
-        Details submitted
-      </div>
-    );
-  }
-
-  const fieldStyle = {
-    width: '100%', padding: '9px 12px', borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.1)', fontSize: 14, outline: 'none',
-    color: '#D8C8A0', background: 'rgba(255,255,255,0.04)', boxSizing: 'border-box', transition: 'border-color 0.15s',
-  };
-  const labelStyle     = { display: 'block', marginBottom: 12 };
-  const labelTextStyle = { display: 'block', fontSize: 12, fontWeight: 500, color: '#9A8868', marginBottom: 5 };
-
-  return (
-    <form onSubmit={handleSubmit} style={{
-      background: 'rgba(255,255,255,0.03)',
-      backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: 16, padding: '20px', width: '100%', maxWidth: 340,
-      boxShadow: '0 12px 48px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)',
-    }}>
-      <p style={{ margin: '0 0 16px', fontWeight: 600, fontSize: 15, color: '#F2EDD4' }}>
-        Passenger Details
-      </p>
-
-      <div style={{ display: 'flex', gap: 10 }}>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>First Name</span>
-          <input type="text" value={firstName} required placeholder="Rahul"
-            onChange={e => setFirstName(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-        <label style={{ ...labelStyle, flex: 1 }}>
-          <span style={labelTextStyle}>Last Name</span>
-          <input type="text" value={lastName} required placeholder="Sharma"
-            onChange={e => setLastName(e.target.value)} style={fieldStyle}
-            onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-        </label>
-      </div>
-
-      <label style={labelStyle}>
-        <span style={labelTextStyle}>Email Address</span>
-        <input type="email" value={email} required placeholder="rahul@example.com"
-          onChange={e => setEmail(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-      </label>
-
-      <label style={{ ...labelStyle, marginBottom: 18 }}>
-        <span style={labelTextStyle}>Phone Number</span>
-        <input type="tel" value={phone} required placeholder="9834725737"
-          onChange={e => setPhone(e.target.value)} style={fieldStyle}
-          onFocus={e => { e.target.style.borderColor = 'rgba(180,140,60,0.6)'; e.target.style.boxShadow = '0 0 0 3px rgba(160,120,50,0.14)'; }} onBlur={e => { e.target.style.borderColor = 'rgba(255,255,255,0.1)'; e.target.style.boxShadow = 'none'; }} />
-      </label>
-
-      <button type="submit" disabled={!valid} style={{
-        width: '100%', padding: '11px', borderRadius: 10, border: 'none',
-        background: valid ? 'linear-gradient(145deg, #3A2A10 0%, #251A08 100%)' : 'rgba(255,255,255,0.04)',
-        color: valid ? '#E0C878' : '#4A3D28', fontSize: 14, fontWeight: 600,
-        cursor: valid ? 'pointer' : 'not-allowed', transition: 'background 0.15s',
-        boxShadow: valid ? '0 4px 20px rgba(0,0,0,0.5)' : 'none',
-      }}>
-        Continue to Payment
-      </button>
-    </form>
-  );
-}
 
 function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
   const [paying, setPaying] = useState(false);
@@ -2546,12 +2491,12 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
     setPaying(true);
     setError('');
     try {
-      const guest = transferGuestRef.current;
+      const guestList = Array.isArray(transferGuestRef.current) ? transferGuestRef.current : [transferGuestRef.current];
       const rzpResponse = await payWithRazorpay({
         amount: data.amount,
         currency: data.currency || 'INR',
         description: `${data.transferType} — ${data.vehicleType}`,
-        guest,
+        guest: guestList[0],
       });
       const res = await fetch('/api/payment/verify-and-book', {
         method: 'POST',
@@ -2567,7 +2512,7 @@ function TransferPaymentGate({ data, transferGuestRef, onComplete, done }) {
           date:     data.date,
           time:     data.time,
           adults:   data.adults || 1,
-          guest,
+          guests:   guestList,
         }),
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error || 'Booking failed'); }
@@ -2885,9 +2830,15 @@ export default function ChatUI({ user }) {
     m.role === 'assistant' && m.content.includes('[GUEST_DETAILS_FORM]') ? i : acc, -1);
   const guestFormDone = lastFormIdx !== -1 && messages.slice(lastFormIdx + 1).some(m => m.role === 'user');
 
-  function handleGuestFormSubmit(firstName, lastName, email, phone) {
-    pendingGuestRef.current = { firstName, lastName, email, phone };
-    const msg = `First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}`;
+  function handleGuestFormSubmit(guests) {
+    pendingGuestRef.current = guests; // store full array
+    const msg = guests.length === 1
+      ? `First Name: ${guests[0].firstName}\nLast Name: ${guests[0].lastName}\nEmail: ${guests[0].email}\nPhone: ${guests[0].phone}`
+      : guests.map((g, i) =>
+          i === 0
+            ? `Guest 1 (Lead):\nFirst Name: ${g.firstName}\nLast Name: ${g.lastName}\nEmail: ${g.email}\nPhone: ${g.phone}`
+            : `Guest ${i + 1}:\nFirst Name: ${g.firstName}\nLast Name: ${g.lastName}`
+        ).join('\n\n');
     send(msg);
   }
 
@@ -2902,6 +2853,17 @@ export default function ChatUI({ user }) {
     const msg = `Destination: ${destination}\nCheck-in: ${checkin}\nCheck-out: ${checkout}\nAdults: ${adults}`;
     send(msg);
   }
+
+  /* Extract guest count from the last hotel search submission */
+  const hotelGuestCount = (() => {
+    const lastSFIdx = messages.reduce((acc, m, i) =>
+      m.role === 'assistant' && SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
+    if (lastSFIdx === -1) return 1;
+    const sub = messages.slice(lastSFIdx + 1).find(m => m.role === 'user');
+    if (!sub) return 1;
+    const match = sub.content.match(/Adults:\s*(\d+)/i);
+    return match ? Math.max(1, parseInt(match[1], 10)) : 1;
+  })();
 
   /* ── Hotel list: done when a user message exists after the last hotel list ── */
   const lastHotelListIdx = messages.reduce((acc, m, i) =>
@@ -3008,6 +2970,17 @@ export default function ChatUI({ user }) {
     send(`From Type: ${fromType}\nFrom: ${from}\nTo Type: ${toType}\nTo: ${to}\nDate: ${date}\nTime: ${time}\nAdults: ${adults}`);
   }
 
+  /* Extract guest count from the last transfer search submission */
+  const transferGuestCount = (() => {
+    const lastTSIdx = messages.reduce((acc, m, i) =>
+      m.role === 'assistant' && TRANSFER_SEARCH_FORM_RE.test(m.content) ? i : acc, -1);
+    if (lastTSIdx === -1) return 1;
+    const sub = messages.slice(lastTSIdx + 1).find(m => m.role === 'user');
+    if (!sub) return 1;
+    const match = sub.content.match(/Adults:\s*(\d+)/i);
+    return match ? Math.max(1, parseInt(match[1], 10)) : 1;
+  })();
+
   /* ── Transfer list: done when a user message exists after the last transfer list ── */
   const lastTransferListIdx = messages.reduce((acc, m, i) =>
     m.role === 'assistant' && m.content.trim().startsWith('[TRANSFER_LIST:') ? i : acc, -1);
@@ -3022,9 +2995,16 @@ export default function ChatUI({ user }) {
     m.role === 'assistant' && m.content.includes('[TRANSFER_GUEST_FORM]') ? i : acc, -1);
   const transferGuestDone = lastTransferGuestIdx !== -1 && messages.slice(lastTransferGuestIdx + 1).some(m => m.role === 'user');
 
-  function handleTransferGuestSubmit(firstName, lastName, email, phone) {
-    pendingTransferGuestRef.current = { firstName, lastName, email, phone };
-    send(`First Name: ${firstName}\nLast Name: ${lastName}\nEmail: ${email}\nPhone: ${phone}`);
+  function handleTransferGuestSubmit(guests) {
+    pendingTransferGuestRef.current = guests; // store full array
+    const msg = guests.length === 1
+      ? `First Name: ${guests[0].firstName}\nLast Name: ${guests[0].lastName}\nEmail: ${guests[0].email}\nPhone: ${guests[0].phone}`
+      : guests.map((g, i) =>
+          i === 0
+            ? `Guest 1 (Lead):\nFirst Name: ${g.firstName}\nLast Name: ${g.lastName}\nEmail: ${g.email}\nPhone: ${g.phone}`
+            : `Guest ${i + 1}:\nFirst Name: ${g.firstName}\nLast Name: ${g.lastName}`
+        ).join('\n\n');
+    send(msg);
   }
 
   /* ── Transfer payment gate: done when TRANSFER_BOOKING_CONFIRMED exists after it ── */
@@ -3396,6 +3376,7 @@ export default function ChatUI({ user }) {
                       isMobile={isMobile}
                       onGuestFormSubmit={handleGuestFormSubmit}
                       guestFormDone={guestFormDone}
+                      hotelGuestCount={hotelGuestCount}
                       onSearchFormSubmit={handleSearchFormSubmit}
                       searchFormDone={searchFormDone}
                       onHotelSelect={handleHotelSelect}
@@ -3419,6 +3400,7 @@ export default function ChatUI({ user }) {
                       transferListDone={transferListDone}
                       onTransferGuestSubmit={handleTransferGuestSubmit}
                       transferGuestDone={transferGuestDone}
+                      transferGuestCount={transferGuestCount}
                       onTransferPaymentComplete={handleTransferPaymentComplete}
                       transferPaymentDone={transferPaymentDone}
                       transferGuestRef={pendingTransferGuestRef}

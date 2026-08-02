@@ -28,20 +28,18 @@ export async function POST(request) {
   let result;
 
   if (type === 'hotel') {
-    const { rateKey, guest } = body;
+    const { rateKey, guests } = body;
     result = await createBooking({
       rateKey,
-      holderName:      guest.firstName,
-      holderSurname:   guest.lastName,
-      email:           guest.email,
-      phone:           guest.phone,
+      guests,
       clientReference: `PAY-${razorpay_payment_id}`,
     });
   } else if (type === 'flight') {
     const { offerId, passengerIds, guests, flightMeta } = body;
     result = await createFlightOrder(offerId, passengerIds, guests, 0, flightMeta || null);
   } else if (type === 'transfer') {
-    const { rateKey, fromCode, toCode, date, time, adults, guest } = body;
+    const { rateKey, fromCode, toCode, date, time, adults, guests } = body;
+    const lead = guests[0];
     result = await bookTransfer({
       rateKey,
       fromCode,
@@ -50,10 +48,10 @@ export async function POST(request) {
       time,
       adults: adults || 1,
       holder: {
-        firstName: guest.firstName,
-        lastName:  guest.lastName,
-        email:     guest.email,
-        phone:     guest.phone,
+        firstName: lead.firstName,
+        lastName:  lead.lastName,
+        email:     lead.email,
+        phone:     lead.phone,
       },
       clientReference: `PAY-${razorpay_payment_id}`,
     });

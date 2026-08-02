@@ -283,17 +283,18 @@ export async function checkRate(rateKey) {
   };
 }
 
-export async function createBooking({ rateKey, holderName, holderSurname, email, phone, clientReference }) {
+export async function createBooking({ rateKey, guests, clientReference }) {
+  const lead = guests[0];
   const body = {
-    holder: { name: holderName, surname: holderSurname },
+    holder: { name: lead.firstName, surname: lead.lastName },
     rooms: [
       {
         rateKey,
-        paxes: [{ roomId: 1, type: 'AD', name: holderName, surname: holderSurname }],
+        paxes: guests.map(g => ({ roomId: 1, type: 'AD', name: g.firstName, surname: g.lastName })),
       },
     ],
     clientReference: clientReference || `BOT-${Date.now()}`,
-    remark: `Contact: ${email} | ${phone}`,
+    remark: `Contact: ${lead.email} | ${lead.phone}`,
   };
 
   const res = await fetch(`${BASE_URL}/hotel-api/1.0/bookings`, {
