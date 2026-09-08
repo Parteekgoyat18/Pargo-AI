@@ -9,14 +9,10 @@ export default function RegisterPage() {
 
   return (
     <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      position: 'fixed',
+      inset: 0,
       background: '#0D0B0A',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-      padding: '24px 16px',
-      position: 'relative',
       overflow: 'hidden',
     }}>
       {/* Aurora blobs — warm amber, matching main app */}
@@ -41,11 +37,19 @@ export default function RegisterPage() {
         pointerEvents: 'none',
       }} />
 
+      {/* Scrollable layer — keeps the card fully reachable even when it's taller than the viewport */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        overflowY: 'auto',
+        display: 'flex',
+        padding: '24px 16px',
+      }}>
       {/* Card with gold gradient border */}
       <div style={{
-        position: 'relative',
         width: '100%',
         maxWidth: 400,
+        margin: 'auto',
         zIndex: 1,
         borderRadius: 24,
         padding: 1,
@@ -278,6 +282,7 @@ export default function RegisterPage() {
             </p>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )
