@@ -41,33 +41,48 @@ export default function RegisterPage() {
       }}>
         <div style={{ margin: 'auto', width: '100%', maxWidth: 420, zIndex: 1 }}>
 
-          {/* Brand lockup, above the card */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 28 }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: 11,
-              background: 'linear-gradient(145deg, #E8C56A 0%, #C9A84C 55%, #9A7A2E 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 19, fontWeight: 800, color: '#171308',
-              boxShadow: '0 0 24px rgba(201,168,76,0.35)',
-            }}>P</div>
-            <span style={{ fontSize: 20, fontWeight: 700, color: '#F2EDD4', letterSpacing: '-0.3px' }}>Pargo AI</span>
-          </div>
-
           {/* Card */}
           <div style={{
             background: '#151109',
             border: '1px solid rgba(201,168,76,0.14)',
             borderRadius: 20,
-            padding: '40px 36px',
+            padding: '32px 32px',
             boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
           }}>
 
-            <h1 style={{
-              fontSize: 24, fontWeight: 700, color: '#F2EDD4',
-              margin: '0 0 28px', letterSpacing: '-0.3px',
-            }}>
-              Create your account
-            </h1>
+            {/* Logo + heading */}
+            <div style={{ textAlign: 'center', marginBottom: 24 }}>
+              <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto 14px', display: 'inline-block' }}>
+                <div style={{
+                  position: 'absolute', inset: -14, borderRadius: '50%',
+                  border: '1px solid rgba(201,168,76,0.18)',
+                  boxShadow: '0 0 8px rgba(201,168,76,0.06)',
+                  animation: 'quantumPulse 5s ease-in-out infinite',
+                }} />
+                <div style={{
+                  position: 'absolute', inset: -23, borderRadius: '50%',
+                  border: '1px solid rgba(201,168,76,0.08)',
+                }} />
+                <div style={{
+                  width: 60, height: 60, borderRadius: '50%',
+                  background: 'linear-gradient(145deg, #1A1510 0%, #0D0A07 60%, #15110A 100%)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 23, fontWeight: 800, color: '#C9A84C',
+                  boxShadow: '0 0 28px rgba(201,168,76,0.38), 0 0 56px rgba(201,168,76,0.12)',
+                  border: '1px solid rgba(201,168,76,0.22)',
+                  letterSpacing: '-1px',
+                  textShadow: '0 0 12px rgba(215,178,80,0.7)',
+                  position: 'relative', zIndex: 1,
+                }}>P</div>
+              </div>
+              <h1 className="gradient-heading" style={{
+                display: 'block',
+                fontSize: 23, fontWeight: 800,
+                margin: 0, letterSpacing: '-0.5px',
+              }}>
+                Create your account
+              </h1>
+            </div>
 
             {/* Error message */}
             {state?.error && (
@@ -84,10 +99,10 @@ export default function RegisterPage() {
               </div>
             )}
 
-            <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {/* Name */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 6 }}>
                   Name
                 </label>
                 <input
@@ -104,7 +119,7 @@ export default function RegisterPage() {
 
               {/* Email */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 6 }}>
                   Email
                 </label>
                 <input
@@ -121,7 +136,7 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 6 }}>
                   Password
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -132,7 +147,7 @@ export default function RegisterPage() {
                     minLength={8}
                     autoComplete="new-password"
                     placeholder="••••••••"
-                    style={{ ...inputStyle, padding: '14px 46px 14px 16px' }}
+                    style={{ ...inputStyle, padding: '12px 46px 12px 16px' }}
                     onFocus={focusInput}
                     onBlur={blurInput}
                   />
@@ -165,7 +180,7 @@ export default function RegisterPage() {
 
               {/* Confirm Password */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 6 }}>
                   Confirm password
                 </label>
                 <input
@@ -175,7 +190,7 @@ export default function RegisterPage() {
                   minLength={8}
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  style={inputStyle}
+                  style={{ ...inputStyle, padding: '12px 16px' }}
                   onFocus={focusInput}
                   onBlur={blurInput}
                 />
@@ -205,7 +220,7 @@ export default function RegisterPage() {
             </form>
 
             {/* Footer */}
-            <p style={{ marginTop: 24, textAlign: 'center', color: '#8A7A56', fontSize: 14 }}>
+            <p style={{ marginTop: 16, textAlign: 'center', color: '#8A7A56', fontSize: 14 }}>
               Already have an account?{' '}
               <Link href="/login" style={{ color: '#E8C56A', fontWeight: 600, textDecoration: 'none' }}>
                 Sign in
@@ -220,7 +235,7 @@ export default function RegisterPage() {
 
 const inputStyle = {
   width: '100%',
-  padding: '14px 16px',
+  padding: '12px 16px',
   borderRadius: 10,
   background: 'rgba(201,168,76,0.05)',
   border: '1px solid rgba(201,168,76,0.16)',
