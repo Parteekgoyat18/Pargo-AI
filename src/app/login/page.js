@@ -37,37 +37,37 @@ export default function LoginPage() {
         inset: 0,
         overflowY: 'auto',
         display: 'flex',
-        padding: '24px 16px',
+        padding: '16px',
       }}>
-        <div style={{ margin: 'auto', width: '100%', maxWidth: 420, zIndex: 1 }}>
+        <div style={{ margin: 'auto', width: '100%', maxWidth: 400, zIndex: 1 }}>
 
           {/* Card */}
           <div style={{
             background: '#151109',
             border: '1px solid rgba(201,168,76,0.14)',
             borderRadius: 20,
-            padding: '32px 32px',
+            padding: '24px 28px',
             boxShadow: '0 24px 60px rgba(0,0,0,0.55)',
           }}>
 
             {/* Logo + heading */}
-            <div style={{ textAlign: 'center', marginBottom: 24 }}>
-              <div style={{ position: 'relative', width: 60, height: 60, margin: '0 auto 14px', display: 'inline-block' }}>
+            <div style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div style={{ position: 'relative', width: 44, height: 44, margin: '0 auto 10px', display: 'inline-block' }}>
                 <div style={{
-                  position: 'absolute', inset: -14, borderRadius: '50%',
+                  position: 'absolute', inset: -10, borderRadius: '50%',
                   border: '1px solid rgba(201,168,76,0.18)',
                   boxShadow: '0 0 8px rgba(201,168,76,0.06)',
                   animation: 'quantumPulse 5s ease-in-out infinite',
                 }} />
                 <div style={{
-                  position: 'absolute', inset: -23, borderRadius: '50%',
+                  position: 'absolute', inset: -17, borderRadius: '50%',
                   border: '1px solid rgba(201,168,76,0.08)',
                 }} />
                 <div style={{
-                  width: 60, height: 60, borderRadius: '50%',
+                  width: 44, height: 44, borderRadius: '50%',
                   background: 'linear-gradient(145deg, #1A1510 0%, #0D0A07 60%, #15110A 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 23, fontWeight: 800, color: '#C9A84C',
+                  fontSize: 18, fontWeight: 800, color: '#C9A84C',
                   boxShadow: '0 0 28px rgba(201,168,76,0.38), 0 0 56px rgba(201,168,76,0.12)',
                   border: '1px solid rgba(201,168,76,0.22)',
                   letterSpacing: '-1px',
@@ -77,7 +77,7 @@ export default function LoginPage() {
               </div>
               <h1 className="gradient-heading" style={{
                 display: 'block',
-                fontSize: 23, fontWeight: 800,
+                fontSize: 20, fontWeight: 800,
                 margin: 0, letterSpacing: '-0.5px',
               }}>
                 Sign in to Pargo AI
@@ -91,18 +91,18 @@ export default function LoginPage() {
                 background: 'rgba(248,113,113,0.06)',
                 border: '1px solid rgba(248,113,113,0.2)',
                 borderRadius: 10,
-                padding: '11px 14px',
+                padding: '9px 12px',
                 fontSize: 13,
-                marginBottom: 20,
+                marginBottom: 14,
               }}>
                 {state.error}
               </div>
             )}
 
-            <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {/* Email */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
                   Email
                 </label>
                 <input
@@ -119,7 +119,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 14, fontWeight: 500, display: 'block', marginBottom: 8 }}>
+                <label style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
                   Password
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -129,7 +129,7 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                     placeholder="••••••••"
-                    style={{ ...inputStyle, padding: '14px 46px 14px 16px' }}
+                    style={{ ...inputStyle, padding: '10px 46px 10px 14px' }}
                     onFocus={focusInput}
                     onBlur={blurInput}
                   />
@@ -166,8 +166,8 @@ export default function LoginPage() {
                 disabled={pending}
                 className={pending ? '' : 'shimmer-btn'}
                 style={{
-                  marginTop: 8,
-                  padding: '14px',
+                  marginTop: 4,
+                  padding: '12px',
                   background: pending
                     ? 'rgba(201,168,76,0.06)'
                     : 'linear-gradient(135deg, #C9A84C, #F2EDD4, #E8C56A, #C9A84C)',
@@ -192,7 +192,7 @@ export default function LoginPage() {
             </form>
 
             {/* Footer */}
-            <p style={{ marginTop: 18, textAlign: 'center', color: '#8A7A56', fontSize: 14 }}>
+            <p style={{ marginTop: 12, textAlign: 'center', color: '#8A7A56', fontSize: 13 }}>
               Don&apos;t have an account?{' '}
               <Link href="/register" style={{ color: '#E8C56A', fontWeight: 600, textDecoration: 'none' }}>
                 Register
@@ -207,12 +207,12 @@ export default function LoginPage() {
 
 const inputStyle = {
   width: '100%',
-  padding: '14px 16px',
+  padding: '10px 14px',
   borderRadius: 10,
   background: 'rgba(201,168,76,0.05)',
   border: '1px solid rgba(201,168,76,0.16)',
   color: '#F0E6C8',
-  fontSize: 15,
+  fontSize: 14,
   outline: 'none',
   boxSizing: 'border-box',
   transition: 'border-color 0.2s, box-shadow 0.2s',
