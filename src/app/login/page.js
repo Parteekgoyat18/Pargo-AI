@@ -38,7 +38,7 @@ export default function LoginPage() {
       }} />
 
       {/* Scrollable layer — keeps the card fully reachable even when it's taller than the viewport */}
-      <div style={{
+      <div className="auth-scroll" style={{
         position: 'absolute',
         inset: 0,
         overflowY: 'auto',
