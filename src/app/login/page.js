@@ -42,7 +42,7 @@ export default function LoginPage() {
         <div style={{ margin: 'auto', width: '100%', maxWidth: 400, zIndex: 1 }}>
 
           {/* Card */}
-          <div style={{
+          <div className="auth-card" style={{
             background: '#151109',
             border: '1px solid rgba(201,168,76,0.14)',
             borderRadius: 20,
@@ -51,8 +51,8 @@ export default function LoginPage() {
           }}>
 
             {/* Logo + heading */}
-            <div style={{ textAlign: 'center', marginBottom: 16 }}>
-              <div style={{ position: 'relative', width: 44, height: 44, margin: '0 auto 10px', display: 'inline-block' }}>
+            <div className="auth-header" style={{ textAlign: 'center', marginBottom: 16 }}>
+              <div className="auth-logo-wrap" style={{ position: 'relative', width: 44, height: 44, margin: '0 auto 10px', display: 'inline-block' }}>
                 <div style={{
                   position: 'absolute', inset: -10, borderRadius: '50%',
                   border: '1px solid rgba(201,168,76,0.18)',
@@ -63,7 +63,7 @@ export default function LoginPage() {
                   position: 'absolute', inset: -17, borderRadius: '50%',
                   border: '1px solid rgba(201,168,76,0.08)',
                 }} />
-                <div style={{
+                <div className="auth-logo-core" style={{
                   width: 44, height: 44, borderRadius: '50%',
                   background: 'linear-gradient(145deg, #1A1510 0%, #0D0A07 60%, #15110A 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -75,7 +75,7 @@ export default function LoginPage() {
                   position: 'relative', zIndex: 1,
                 }}>P</div>
               </div>
-              <h1 className="gradient-heading" style={{
+              <h1 className="gradient-heading auth-heading" style={{
                 display: 'block',
                 fontSize: 20, fontWeight: 800,
                 margin: 0, letterSpacing: '-0.5px',
@@ -99,10 +99,10 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <form action={action} className="auth-form" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {/* Email */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                <label className="auth-label" style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
                   Email
                 </label>
                 <input
@@ -111,6 +111,7 @@ export default function LoginPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
+                  className="auth-input"
                   style={inputStyle}
                   onFocus={focusInput}
                   onBlur={blurInput}
@@ -119,7 +120,7 @@ export default function LoginPage() {
 
               {/* Password */}
               <div>
-                <label style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
+                <label className="auth-label" style={{ color: '#B8AA82', fontSize: 13, fontWeight: 500, display: 'block', marginBottom: 4 }}>
                   Password
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -129,6 +130,7 @@ export default function LoginPage() {
                     required
                     autoComplete="current-password"
                     placeholder="••••••••"
+                    className="auth-input"
                     style={{ ...inputStyle, padding: '10px 46px 10px 14px' }}
                     onFocus={focusInput}
                     onBlur={blurInput}
@@ -164,7 +166,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={pending}
-                className={pending ? '' : 'shimmer-btn'}
+                className={`auth-submit ${pending ? '' : 'shimmer-btn'}`}
                 style={{
                   marginTop: 4,
                   padding: '12px',
@@ -192,7 +194,7 @@ export default function LoginPage() {
             </form>
 
             {/* Footer */}
-            <p style={{ marginTop: 12, textAlign: 'center', color: '#8A7A56', fontSize: 13 }}>
+            <p className="auth-footer" style={{ marginTop: 12, textAlign: 'center', color: '#8A7A56', fontSize: 13 }}>
               Don&apos;t have an account?{' '}
               <Link href="/register" style={{ color: '#E8C56A', fontWeight: 600, textDecoration: 'none' }}>
                 Register
