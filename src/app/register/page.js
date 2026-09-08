@@ -200,22 +200,30 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={pending}
+                className={pending ? '' : 'shimmer-btn'}
                 style={{
                   marginTop: 8,
                   padding: '14px',
-                  background: pending ? 'rgba(201,168,76,0.15)' : '#C9A84C',
-                  color: pending ? '#8A7A56' : '#171308',
-                  border: 'none',
+                  background: pending
+                    ? 'rgba(201,168,76,0.06)'
+                    : 'linear-gradient(135deg, #C9A84C, #F2EDD4, #E8C56A, #C9A84C)',
+                  backgroundSize: '200% auto',
+                  color: pending ? '#4A3A1A' : '#0D0B0A',
+                  border: pending ? '1px solid rgba(201,168,76,0.15)' : 'none',
                   borderRadius: 10,
                   fontSize: 15,
-                  fontWeight: 700,
+                  fontWeight: 800,
                   cursor: pending ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.2s, transform 0.15s',
+                  transition: 'opacity 0.2s, box-shadow 0.2s, transform 0.15s',
+                  boxShadow: pending
+                    ? 'none'
+                    : '0 0 32px rgba(201,168,76,0.45), 0 0 64px rgba(201,168,76,0.15), 0 6px 20px rgba(0,0,0,0.5)',
+                  letterSpacing: '0.5px',
                 }}
-                onMouseEnter={e => { if (!pending) e.currentTarget.style.background = '#DDBB5A'; }}
-                onMouseLeave={e => { if (!pending) e.currentTarget.style.background = '#C9A84C'; }}
+                onMouseEnter={e => { if (!pending) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
               >
-                {pending ? 'Creating account…' : 'Create account'}
+                {pending ? 'Creating account…' : 'Create account →'}
               </button>
             </form>
 
