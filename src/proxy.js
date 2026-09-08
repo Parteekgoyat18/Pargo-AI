@@ -14,7 +14,7 @@ async function decrypt(token) {
 
 export async function proxy(request) {
   const { pathname } = request.nextUrl
-  const isPublic = pathname === '/login'
+  const isPublic = pathname === '/login' || pathname === '/register'
   const isApi = pathname.startsWith('/api/')
 
   const token = request.cookies.get('session')?.value

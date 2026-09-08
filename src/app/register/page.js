@@ -1,10 +1,10 @@
 'use client'
 import { useActionState, useState } from 'react'
 import Link from 'next/link'
-import { loginAction } from '@/app/actions/auth'
+import { registerAction } from '@/app/actions/auth'
 
-export default function LoginPage() {
-  const [state, action, pending] = useActionState(loginAction, undefined)
+export default function RegisterPage() {
+  const [state, action, pending] = useActionState(registerAction, undefined)
   const [showPassword, setShowPassword] = useState(false)
 
   return (
@@ -100,7 +100,7 @@ export default function LoginPage() {
               margin: '0 0 8px', letterSpacing: '-0.5px',
               display: 'block',
             }}>
-              Sign in to Pargo AI
+              Create your account
             </h1>
             <p style={{ color: '#4A3A1A', fontSize: 13, margin: 0, letterSpacing: '1px', textTransform: 'uppercase', fontWeight: 500 }}>
               Your intelligent travel companion
@@ -124,6 +124,26 @@ export default function LoginPage() {
           )}
 
           <form action={action} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {/* Name */}
+            <div>
+              <label style={{
+                color: '#7A6A4A', fontSize: 11, fontWeight: 600, display: 'block',
+                marginBottom: 8, letterSpacing: '0.8px', textTransform: 'uppercase',
+              }}>
+                Name
+              </label>
+              <input
+                name="name"
+                type="text"
+                required
+                autoComplete="name"
+                placeholder="Your full name"
+                style={inputStyle}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
+            </div>
+
             {/* Email */}
             <div>
               <label style={{
@@ -138,26 +158,9 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: 'rgba(201,168,76,0.04)',
-                  border: '1px solid rgba(201,168,76,0.18)',
-                  color: '#D8C9A8',
-                  fontSize: 14,
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
-                }}
-                onFocus={e => {
-                  e.target.style.borderColor = 'rgba(201,168,76,0.6)';
-                  e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.1), 0 0 20px rgba(201,168,76,0.08)';
-                }}
-                onBlur={e => {
-                  e.target.style.borderColor = 'rgba(201,168,76,0.18)';
-                  e.target.style.boxShadow = 'none';
-                }}
+                style={inputStyle}
+                onFocus={focusInput}
+                onBlur={blurInput}
               />
             </div>
 
@@ -174,28 +177,12 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
-                  autoComplete="current-password"
+                  minLength={8}
+                  autoComplete="new-password"
                   placeholder="••••••••"
-                  style={{
-                    width: '100%',
-                    padding: '12px 44px 12px 16px',
-                    borderRadius: 12,
-                    background: 'rgba(201,168,76,0.04)',
-                    border: '1px solid rgba(201,168,76,0.18)',
-                    color: '#D8C9A8',
-                    fontSize: 14,
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
-                  }}
-                  onFocus={e => {
-                    e.target.style.borderColor = 'rgba(201,168,76,0.6)';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.1), 0 0 20px rgba(201,168,76,0.08)';
-                  }}
-                  onBlur={e => {
-                    e.target.style.borderColor = 'rgba(201,168,76,0.18)';
-                    e.target.style.boxShadow = 'none';
-                  }}
+                  style={{ ...inputStyle, padding: '12px 44px 12px 16px' }}
+                  onFocus={focusInput}
+                  onBlur={blurInput}
                 />
                 <button
                   type="button"
@@ -222,6 +209,27 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label style={{
+                color: '#7A6A4A', fontSize: 11, fontWeight: 600, display: 'block',
+                marginBottom: 8, letterSpacing: '0.8px', textTransform: 'uppercase',
+              }}>
+                Confirm password
+              </label>
+              <input
+                name="confirmPassword"
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                style={inputStyle}
+                onFocus={focusInput}
+                onBlur={blurInput}
+              />
             </div>
 
             {/* Submit button */}
@@ -251,7 +259,7 @@ export default function LoginPage() {
               onMouseEnter={e => { if (!pending) e.currentTarget.style.transform = 'translateY(-1px)'; }}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; }}
             >
-              {pending ? 'Signing in…' : 'Sign in →'}
+              {pending ? 'Creating account…' : 'Create account →'}
             </button>
           </form>
 
@@ -262,13 +270,10 @@ export default function LoginPage() {
             borderTop: '1px solid rgba(201,168,76,0.08)',
             textAlign: 'center',
           }}>
-            <p style={{ color: '#2A1F0E', fontSize: 12, margin: '0 0 14px', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-              Hotels · Flights · Ground Transfers · Worldwide
-            </p>
             <p style={{ color: '#7A6A4A', fontSize: 13, margin: 0 }}>
-              Don&apos;t have an account?{' '}
-              <Link href="/register" style={{ color: '#C9A84C', fontWeight: 600, textDecoration: 'none' }}>
-                Register
+              Already have an account?{' '}
+              <Link href="/login" style={{ color: '#C9A84C', fontWeight: 600, textDecoration: 'none' }}>
+                Sign in
               </Link>
             </p>
           </div>
@@ -276,4 +281,27 @@ export default function LoginPage() {
       </div>
     </div>
   )
+}
+
+const inputStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: 12,
+  background: 'rgba(201,168,76,0.04)',
+  border: '1px solid rgba(201,168,76,0.18)',
+  color: '#D8C9A8',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
+}
+
+function focusInput(e) {
+  e.target.style.borderColor = 'rgba(201,168,76,0.6)';
+  e.target.style.boxShadow = '0 0 0 3px rgba(201,168,76,0.1), 0 0 20px rgba(201,168,76,0.08)';
+}
+
+function blurInput(e) {
+  e.target.style.borderColor = 'rgba(201,168,76,0.18)';
+  e.target.style.boxShadow = 'none';
 }
