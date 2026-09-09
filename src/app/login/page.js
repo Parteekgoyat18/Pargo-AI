@@ -197,7 +197,7 @@ export default function LoginPage() {
             <p className="auth-footer" style={{ marginTop: 12, textAlign: 'center', color: '#8A7A56', fontSize: 13 }}>
               Don&apos;t have an account?{' '}
               <Link href="/register" style={{ color: '#E8C56A', fontWeight: 600, textDecoration: 'none' }}>
-                Register
+                Create one
               </Link>
             </p>
           </div>
